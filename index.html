@@ -31,7 +31,6 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* red flash on incident */
   body.incident::after {
     content: "";
     position: fixed; inset: 0;
@@ -88,6 +87,7 @@
     border-radius: 6px;
     overflow: hidden;
   }
+  .panel + .panel { margin-top: 16px; }
   .panel h2 {
     font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
     color: var(--dimmer); margin: 0;
@@ -98,6 +98,7 @@
   /* ---------- prompt ---------- */
   .promptbox { padding: 14px; }
   .promptrow {
+    position: relative; overflow: hidden;
     display: flex; align-items: center; gap: 8px;
     background: var(--bg);
     border: 1px solid var(--border);
@@ -105,19 +106,31 @@
     transition: border-color 0.15s;
   }
   .promptrow:focus-within { border-color: var(--accent); }
-  .promptrow.cooling { opacity: 0.45; }
-  .chev { color: var(--accent); font-weight: 700; }
+  .promptrow.cooling { border-color: var(--border); }
+  .promptrow.cooling .chev { color: var(--dimmer); }
+  /* cooldown fill sweeps left→right as the wait completes */
+  .cdbar {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--accent); opacity: 0.13;
+    width: 0%; pointer-events: none;
+    transition: width 0.06s linear;
+  }
+  .chev { color: var(--accent); font-weight: 700; position: relative; }
   #prompt {
     flex: 1; background: none; border: none; outline: none;
-    color: var(--text); font: inherit; font-size: 13px;
+    color: var(--text); font: inherit; font-size: 13px; position: relative;
   }
   #prompt::placeholder { color: var(--dimmer); }
-  .hint { font-size: 11px; color: var(--dimmer); margin-top: 8px; }
+  .hint {
+    font-size: 11px; color: var(--dimmer); margin-top: 8px;
+    display: flex; justify-content: space-between; gap: 10px;
+  }
   .hint kbd {
     background: var(--panel-2); border: 1px solid var(--border);
     border-radius: 3px; padding: 1px 5px; font: inherit; font-size: 10px;
     color: var(--dim);
   }
+  #cdlabel { color: var(--dim); white-space: nowrap; }
 
   .actions { display: flex; gap: 8px; margin-top: 10px; }
   .actions button {
@@ -131,13 +144,12 @@
 
   /* ---------- log ---------- */
   #log {
-    height: 300px; overflow-y: auto;
+    height: 260px; overflow-y: auto;
     padding: 10px 12px; font-size: 12px;
     display: flex; flex-direction: column-reverse;
   }
   #log div { padding: 2px 0; color: var(--dim); word-break: break-word; }
   #log .t { color: var(--dimmer); margin-right: 8px; font-size: 11px; }
-  #log .ship     { color: var(--dim); }
   #log .incident { color: var(--bad); font-weight: 600; }
   #log .buy      { color: var(--accent); }
   #log .fix      { color: var(--good); }
@@ -165,16 +177,43 @@
     letter-spacing: 0.5px; margin-top: 4px;
   }
   .up .cost-warn { color: var(--bad); font-size: 11px; margin-top: 4px; }
+  .up .maxed { color: var(--dimmer); font-size: 11px; margin-top: 4px; }
+
+  /* ---------- tuning panel ---------- */
+  #tuning { padding: 4px 12px 12px; }
+  .tune {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 0; border-bottom: 1px solid #202026;
+  }
+  .tune:last-of-type { border-bottom: none; }
+  .tune label { flex: 1; font-size: 11px; color: var(--dim); }
+  .tune input {
+    width: 78px; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 3px 6px; font: inherit; font-size: 11px; text-align: right;
+  }
+  .tune input:focus { outline: none; border-color: var(--accent); }
+  .tune input.invalid { border-color: var(--bad); }
+  .tunenote { font-size: 10px; color: var(--dimmer); padding: 8px 0; line-height: 1.45; }
+  #tuning .actions { margin-top: 10px; }
+  summary {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--dimmer); padding: 9px 12px; background: var(--panel-2);
+    border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+  }
+  summary::marker { color: var(--dimmer); }
+  summary:hover { color: var(--dim); }
 
   footer {
     margin-top: 16px; display: flex; justify-content: space-between;
     color: var(--dimmer); font-size: 11px;
   }
-  footer button {
+  #reset {
     background: none; border: none; color: var(--dimmer);
     font: inherit; font-size: 11px; cursor: pointer; text-decoration: underline;
   }
-  footer button:hover { color: var(--bad); }
+  #reset:hover { color: var(--bad); }
+  #reset.armed { color: var(--bad); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -220,25 +259,36 @@
         <h2>claude code</h2>
         <div class="promptbox">
           <div class="promptrow" id="promptrow">
+            <div class="cdbar" id="cdbar"></div>
             <span class="chev">&gt;</span>
             <input id="prompt" autocomplete="off" spellcheck="false" placeholder="add dark mode to the settings page">
           </div>
-          <div class="hint">Type anything and press <kbd>Enter</kbd> to ship it. Or just mash <kbd>Enter</kbd>.</div>
+          <div class="hint">
+            <span>Type anything and press <kbd>Enter</kbd> to ship it.</span>
+            <span id="cdlabel">cooldown 5.0s</span>
+          </div>
           <div class="actions">
             <button id="fixbtn" style="display:none">Fix a bug</button>
           </div>
         </div>
       </div>
 
-      <div class="panel" style="margin-top:16px">
+      <div class="panel">
         <h2>event log</h2>
         <div id="log"></div>
       </div>
     </div>
 
-    <div class="panel">
-      <h2>spend</h2>
-      <div id="upgrades"></div>
+    <div>
+      <div class="panel">
+        <h2>spend</h2>
+        <div id="upgrades"></div>
+      </div>
+
+      <details class="panel" id="tunepanel">
+        <summary>tuning &nbsp;·&nbsp; live config</summary>
+        <div id="tuning"></div>
+      </details>
     </div>
   </div>
 
@@ -253,24 +303,51 @@
 "use strict";
 
 /* ==========================================================================
-   CONFIG — all balance lives here. Tweak these to change how the game feels.
+   CONFIG — all balance lives here, and every value is editable live from the
+   tuning panel in the UI. Nothing below reads these at boot only; the derived
+   getters recompute from CONFIG every frame, so edits apply immediately.
    ========================================================================== */
 const CONFIG = {
-  USERS_PER_FEATURE:      12,     // new users each shipped feature attracts
-  REVENUE_PER_USER:       0.015,  // $ per user per second
-  BASE_QUALITY:           0.50,   // chance a shipped feature is bug-free
-  BASE_USER_CAP:          250,    // servers you start with
+  USERS_PER_FEATURE_MIN:   6,      // each feature attracts a random number of
+  USERS_PER_FEATURE_MAX:  18,      // users in this (inclusive) range
 
-  INCIDENT_CHANCE_PER_BUG: 0.004, // per bug, per second
-  INCIDENT_MIN_LOSS:       0.06,  // fraction of users lost, low end
-  INCIDENT_MAX_LOSS:       0.22,  // ...high end
+  REVENUE_PER_USER:        0.015,  // $ per user per second
+  BASE_QUALITY:            0.50,   // chance a shipped feature is bug-free
+  BASE_USER_CAP:         250,      // capacity before you buy servers
 
-  AGENT_INTERVAL:         6.0,    // seconds between each agent's auto-ship
-  MANUAL_COOLDOWN:        0.0,    // seconds you must wait between ships
+  INCIDENT_CHANCE_PER_BUG: 0.004,  // per bug, per second
+  INCIDENT_MIN_LOSS:       0.06,   // fraction of users lost, low end
+  INCIDENT_MAX_LOSS:       0.22,   // ...high end
+
+  AGENT_INTERVAL:          6.0,    // seconds between each agent's auto-ship
+
+  MANUAL_COOLDOWN_START:   5.0,    // seconds between manual ships, at the start
+  MANUAL_COOLDOWN_MIN:     0.1,    // floor — upgrades can never go below this
+  COOLDOWN_FACTOR:         0.75,   // cooldown multiplier per speed upgrade
 };
+
+const DEFAULTS = Object.assign({}, CONFIG);
+
+/* Which CONFIG keys appear in the tuning panel, and how they step. */
+const TUNABLES = [
+  { key: 'USERS_PER_FEATURE_MIN',   label: 'Users / feature — min',    step: 1,     min: 0 },
+  { key: 'USERS_PER_FEATURE_MAX',   label: 'Users / feature — max',    step: 1,     min: 0 },
+  { key: 'REVENUE_PER_USER',        label: '$ per user / sec',         step: 0.005, min: 0 },
+  { key: 'BASE_QUALITY',            label: 'Base code quality',        step: 0.05,  min: 0, max: 1 },
+  { key: 'BASE_USER_CAP',           label: 'Base user cap',            step: 50,    min: 1 },
+  { key: 'INCIDENT_CHANCE_PER_BUG', label: 'Incident chance /bug /s',  step: 0.001, min: 0, max: 1 },
+  { key: 'INCIDENT_MIN_LOSS',       label: 'Incident churn — min',     step: 0.01,  min: 0, max: 1 },
+  { key: 'INCIDENT_MAX_LOSS',       label: 'Incident churn — max',     step: 0.01,  min: 0, max: 1 },
+  { key: 'AGENT_INTERVAL',          label: 'Agent interval (s)',       step: 0.5,   min: 0.1 },
+  { key: 'MANUAL_COOLDOWN_START',   label: 'Start cooldown (s)',       step: 0.5,   min: 0 },
+  { key: 'MANUAL_COOLDOWN_MIN',     label: 'Min cooldown (s)',         step: 0.1,   min: 0 },
+  { key: 'COOLDOWN_FACTOR',         label: 'Cooldown × per upgrade',   step: 0.05,  min: 0.05, max: 1 },
+];
 
 /* ==========================================================================
    STATE
+   Upgrades store *modifiers*, never absolute values — that is what lets the
+   config panel stay live. Effective numbers come from the getters below.
    ========================================================================== */
 function freshState() {
   return {
@@ -279,14 +356,17 @@ function freshState() {
     features: 0,
     bugs: 0,
 
-    quality:        CONFIG.BASE_QUALITY,
-    userCap:        CONFIG.BASE_USER_CAP,
-    manualCooldown: CONFIG.MANUAL_COOLDOWN,
-    agentInterval:  CONFIG.AGENT_INTERVAL,
+    qualityBonus:        0,    // + to BASE_QUALITY
+    capBonus:            0,    // + to BASE_USER_CAP
+    agentIntervalMult:   1,    // × AGENT_INTERVAL
+    cooldownMult:        1,    // × MANUAL_COOLDOWN_START
+    reviewDelay:         0,    // flat seconds added after the floor
+    incidentMitigation:  1,    // × incident churn
 
     agents: 0,
     agentTimer: 0,
     cooldown: 0,
+    cooldownFrom: 1,           // what the current cooldown started at, for the bar
     monitoring: false,
 
     incidents: 0,
@@ -296,74 +376,104 @@ function freshState() {
 }
 let state = freshState();
 
+/* ---- derived values (recomputed every frame, so CONFIG edits are live) ---- */
+const quality       = () => Math.max(0, Math.min(0.99, CONFIG.BASE_QUALITY + state.qualityBonus));
+const userCap       = () => Math.max(1, CONFIG.BASE_USER_CAP + state.capBonus);
+const agentInterval = () => Math.max(0.05, CONFIG.AGENT_INTERVAL * state.agentIntervalMult);
+const manualCooldown = () =>
+  Math.max(CONFIG.MANUAL_COOLDOWN_MIN, CONFIG.MANUAL_COOLDOWN_START * state.cooldownMult)
+  + state.reviewDelay;
+
+/* True once speed upgrades have bottomed out against the floor. */
+const cooldownMaxed = () =>
+  CONFIG.MANUAL_COOLDOWN_START * state.cooldownMult <= CONFIG.MANUAL_COOLDOWN_MIN + 1e-9;
+
+function usersPerFeature() {
+  const a = Math.floor(CONFIG.USERS_PER_FEATURE_MIN);
+  const b = Math.floor(CONFIG.USERS_PER_FEATURE_MAX);
+  const lo = Math.max(0, Math.min(a, b));
+  const hi = Math.max(0, Math.max(a, b));
+  return lo + Math.floor(Math.random() * (hi - lo + 1));
+}
+
 /* ==========================================================================
    UPGRADES
-   `unlock` decides when it becomes visible. `apply` mutates state.
    ========================================================================== */
 function makeUpgrades() { return [
   {
+    id: 'speed',
+    name: 'Better prompts',
+    desc: () => 'Ship cooldown ×' + CONFIG.COOLDOWN_FACTOR.toFixed(2) +
+                '. Now ' + manualCooldown().toFixed(1) + 's.',
+    cost: 25, scale: 1.5, repeatable: true, count: 0,
+    unlock: () => state.features >= 1,
+    maxed:  () => cooldownMaxed(),
+    apply:  () => { state.cooldownMult *= CONFIG.COOLDOWN_FACTOR; },
+  },
+  {
     id: 'servers',
     name: 'Bigger servers',
-    desc: '+400 user capacity.',
+    desc: () => '+400 user capacity.',
     cost: 60, scale: 1.7, repeatable: true, count: 0,
     unlock: () => state.features >= 3,
-    apply: () => { state.userCap += 400; },
+    apply:  () => { state.capBonus += 400; },
   },
   {
     id: 'tests',
     name: 'Unit tests',
-    desc: 'Code quality 50% → 70%.',
+    desc: () => 'Code quality +20 points.',
     cost: 75, repeatable: false, count: 0,
     unlock: () => state.features >= 5,
-    apply: () => { state.quality += 0.20; },
+    apply:  () => { state.qualityBonus += 0.20; },
   },
   {
     id: 'agent',
     name: 'Background agent',
-    desc: 'Ships a feature every 6s, forever. Never sleeps, never asks.',
+    desc: () => 'Ships a feature every ' + agentInterval().toFixed(1) +
+                's, forever. Never sleeps, never asks.',
     cost: 150, scale: 1.6, repeatable: true, count: 0,
     unlock: () => state.features >= 8,
-    apply: () => { state.agents += 1; },
+    apply:  () => { state.agents += 1; },
   },
   {
     id: 'monitoring',
     name: 'Monitoring',
-    desc: 'See your actual bug count. Unlocks manual bug fixing.',
+    desc: () => 'See your actual bug count. Unlocks manual bug fixing.',
     cost: 400, repeatable: false, count: 0,
     unlock: () => state.incidents >= 1,
-    apply: () => { state.monitoring = true; },
+    apply:  () => { state.monitoring = true; },
   },
   {
     id: 'review',
     name: 'Code review',
-    desc: 'Quality +15%. But every ship now waits 0.6s in review.',
-    warn: 'Slows you down. On purpose.',
+    desc: () => 'Quality +15 points. Agents slow 35%.',
+    warn: 'Adds a flat +0.6s to every ship, under the floor.',
     cost: 900, repeatable: false, count: 0,
     unlock: () => state.features >= 30,
-    apply: () => {
-      state.quality += 0.15;
-      state.manualCooldown += 0.6;
-      state.agentInterval *= 1.35;
+    apply:  () => {
+      state.qualityBonus += 0.15;
+      state.reviewDelay += 0.6;
+      state.agentIntervalMult *= 1.35;
     },
   },
   {
     id: 'ci',
     name: 'CI/CD pipeline',
-    desc: 'Quality +10%. Agents ship 20% faster once the pipeline is green.',
+    desc: () => 'Quality +10 points. Agents ship 20% faster.',
     cost: 2500, repeatable: false, count: 0,
-    unlock: () => state.cash >= 900 && state.features >= 50,
-    apply: () => {
-      state.quality += 0.10;
-      state.agentInterval *= 0.8;
+    unlock: () => state.features >= 50 && state.cash >= 900,
+    apply:  () => {
+      state.qualityBonus += 0.10;
+      state.agentIntervalMult *= 0.8;
     },
   },
   {
     id: 'oncall',
     name: 'On-call rotation',
-    desc: 'Incidents cost half as many users. Someone is always awake.',
+    desc: () => 'Incidents cost half as many users. Someone is always awake.',
     cost: 6000, repeatable: false, count: 0,
     unlock: () => state.incidents >= 5 && state.features >= 80,
-    apply: () => { state.incidentMitigation = 0.5; },
+    apply:  () => { state.incidentMitigation *= 0.5; },
   },
 ]; }
 let upgrades = makeUpgrades();
@@ -413,11 +523,11 @@ function money(n) {
   if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
   return '$' + n.toFixed(0);
 }
-function costOf(u) {
-  return u.repeatable ? Math.floor(u.cost * Math.pow(u.scale, u.count)) : u.cost;
-}
+const costOf = u => u.repeatable ? Math.floor(u.cost * Math.pow(u.scale, u.count)) : u.cost;
 
-const logEl = document.getElementById('log');
+const $ = id => document.getElementById(id);
+const logEl = $('log');
+
 function log(msg, cls) {
   const d = document.createElement('div');
   const mm = String(Math.floor(state.elapsed / 60)).padStart(2, '0');
@@ -431,31 +541,34 @@ function log(msg, cls) {
 /* ==========================================================================
    ACTIONS
    ========================================================================== */
+function startCooldown(seconds) {
+  state.cooldown = seconds;
+  state.cooldownFrom = Math.max(0.0001, seconds);
+}
+
 function shipFeature(manual) {
   if (manual && state.cooldown > 0) return;
-  if (manual) state.cooldown = state.manualCooldown;
+  if (manual) startCooldown(manualCooldown());
 
   state.features++;
 
-  const room = Math.max(0, state.userCap - state.users);
-  const gained = Math.min(CONFIG.USERS_PER_FEATURE, room);
+  const room   = Math.max(0, userCap() - state.users);
+  const gained = Math.min(usersPerFeature(), room);
   state.users += gained;
 
-  const clean = Math.random() < state.quality;
-  if (!clean) state.bugs++;
+  if (Math.random() >= quality()) state.bugs++;
 
   if (manual) {
-    let msg = pick(FEATURES) + ' <span style="color:var(--dimmer)">·</span> ';
-    msg += gained > 0
+    const tail = gained > 0
       ? '<span style="color:var(--good)">+' + gained + ' users</span>'
       : '<span style="color:var(--warn)">at capacity — no new users</span>';
-    log(msg, 'ship');
+    log(pick(FEATURES) + ' <span style="color:var(--dimmer)">·</span> ' + tail, 'ship');
   }
 }
 
 function fixBug() {
   if (state.cooldown > 0 || state.bugs <= 0) return;
-  state.cooldown = Math.max(0.3, state.manualCooldown);
+  startCooldown(manualCooldown());
   state.bugs--;
   log('Fixed: ' + pick(BUGS) + '.', 'fix');
 }
@@ -464,12 +577,12 @@ function triggerIncident() {
   state.incidents++;
   state.bugs = Math.max(0, state.bugs - 1);
 
-  const mit  = state.incidentMitigation || 1;
-  const span = CONFIG.INCIDENT_MAX_LOSS - CONFIG.INCIDENT_MIN_LOSS;
-  const frac = (CONFIG.INCIDENT_MIN_LOSS + Math.random() * span) * mit;
+  const lo   = Math.min(CONFIG.INCIDENT_MIN_LOSS, CONFIG.INCIDENT_MAX_LOSS);
+  const hi   = Math.max(CONFIG.INCIDENT_MIN_LOSS, CONFIG.INCIDENT_MAX_LOSS);
+  const frac = (lo + Math.random() * (hi - lo)) * state.incidentMitigation;
   const lost = Math.min(state.users, Math.ceil(state.users * frac));
 
-  state.users -= lost;
+  state.users     -= lost;
   state.usersLost += lost;
 
   log('INCIDENT — ' + pick(BUGS) + '. <span style="color:var(--bad)">−' +
@@ -485,9 +598,10 @@ function triggerIncident() {
 }
 
 function buy(u) {
+  if (u.maxed && u.maxed()) return;
+  if (!u.repeatable && u.count > 0) return;
   const c = costOf(u);
   if (state.cash < c) return;
-  if (!u.repeatable && u.count > 0) return;
 
   state.cash -= c;
   u.count++;
@@ -502,22 +616,19 @@ function buy(u) {
 function tick(dt) {
   state.elapsed += dt;
 
-  // revenue
   state.cash += state.users * CONFIG.REVENUE_PER_USER * dt;
 
-  // cooldown
   if (state.cooldown > 0) state.cooldown = Math.max(0, state.cooldown - dt);
 
-  // agents ship on their own
   if (state.agents > 0) {
     state.agentTimer += dt * state.agents;
-    while (state.agentTimer >= state.agentInterval) {
-      state.agentTimer -= state.agentInterval;
+    let guard = 0;
+    while (state.agentTimer >= agentInterval() && guard++ < 500) {
+      state.agentTimer -= agentInterval();
       shipFeature(false);
     }
   }
 
-  // incidents — each bug independently rolls every second
   if (state.bugs > 0 && state.users > 0) {
     const p = 1 - Math.pow(1 - CONFIG.INCIDENT_CHANCE_PER_BUG, state.bugs * dt);
     if (Math.random() < p) triggerIncident();
@@ -527,8 +638,6 @@ function tick(dt) {
 /* ==========================================================================
    RENDER
    ========================================================================== */
-const $ = id => document.getElementById(id);
-
 function phaseName() {
   if (state.users < 100)   return 'Garage';
   if (state.users < 1000)  return 'Traction';
@@ -537,35 +646,44 @@ function phaseName() {
 }
 
 function render() {
+  const cap = userCap();
+
   $('s-users').textContent    = fmt(state.users);
-  $('s-cap').textContent      = 'cap ' + fmt(state.userCap) +
-                                (state.users >= state.userCap ? ' — FULL' : '');
+  $('s-cap').textContent      = 'cap ' + fmt(cap) + (state.users >= cap ? ' — FULL' : '');
   $('s-cash').textContent     = money(state.cash);
   $('s-rate').textContent     = '$' + (state.users * CONFIG.REVENUE_PER_USER).toFixed(2) + '/s';
   $('s-features').textContent = fmt(state.features);
   $('s-agents').textContent   = state.agents === 0 ? 'no agents'
-                              : state.agents + (state.agents === 1 ? ' agent' : ' agents');
-  $('s-quality').textContent  = Math.round(state.quality * 100) + '%';
+                              : state.agents + (state.agents === 1 ? ' agent' : ' agents') +
+                                ' · ' + agentInterval().toFixed(1) + 's';
+  $('s-quality').textContent  = Math.round(quality() * 100) + '%';
   $('s-bugs').textContent     = state.monitoring ? fmt(state.bugs) : '??';
   $('s-bugsub').textContent   = state.monitoring ? 'visible' : 'no monitoring';
   $('phase').textContent      = phaseName();
   $('f-stats').textContent    = state.incidents + ' incident' + (state.incidents === 1 ? '' : 's') +
                                 ' · ' + fmt(state.usersLost) + ' users lost';
 
-  $('promptrow').classList.toggle('cooling', state.cooldown > 0);
+  // cooldown bar + label
+  const cooling = state.cooldown > 0;
+  $('promptrow').classList.toggle('cooling', cooling);
+  $('cdbar').style.width = cooling
+    ? (100 * (1 - state.cooldown / state.cooldownFrom)).toFixed(1) + '%'
+    : '0%';
+  $('cdlabel').textContent = cooling
+    ? 'shipping… ' + state.cooldown.toFixed(1) + 's'
+    : 'cooldown ' + manualCooldown().toFixed(1) + 's';
 
   const fb = $('fixbtn');
   fb.style.display = state.monitoring ? '' : 'none';
-  fb.disabled = state.bugs <= 0 || state.cooldown > 0;
+  fb.disabled = state.bugs <= 0 || cooling;
   fb.textContent = state.bugs > 0 ? 'Fix a bug (' + fmt(state.bugs) + ' open)' : 'No known bugs';
 
-  // upgrade affordability
   for (const u of upgrades) {
-    const el = document.getElementById('up-' + u.id);
+    const el = $('up-' + u.id);
     if (!el) continue;
-    const c = costOf(u);
-    el.classList.toggle('locked', state.cash < c);
-    el.querySelector('.cost').textContent = money(c);
+    el.classList.toggle('locked', state.cash < costOf(u));
+    el.querySelector('.cost').textContent = money(costOf(u));
+    el.querySelector('.desc').textContent = u.desc();
   }
 }
 
@@ -575,17 +693,23 @@ function renderUpgrades() {
   let shown = 0;
 
   for (const u of upgrades) {
-    if (!u.repeatable && u.count > 0) {
+    const isMaxed = u.maxed ? u.maxed() : false;
+    const isOwned = !u.repeatable && u.count > 0;
+
+    if (isOwned || (isMaxed && u.count > 0)) {
       const done = document.createElement('div');
       done.className = 'up';
       done.style.cssText = 'opacity:.55;cursor:default';
-      done.innerHTML = '<div class="top"><span class="name">' + u.name +
-                       '</span><span style="color:var(--good);font-size:11px">owned</span></div>';
+      done.innerHTML = '<div class="top"><span class="name">' + u.name + '</span>' +
+        '<span style="color:var(--good);font-size:11px">' +
+        (isMaxed ? 'maxed ×' + u.count : 'owned') + '</span></div>' +
+        (isMaxed ? '<div class="maxed">At the ' + CONFIG.MANUAL_COOLDOWN_MIN +
+                   's floor. Nothing left to squeeze.</div>' : '');
       box.appendChild(done);
       shown++;
       continue;
     }
-    if (!u.unlock()) continue;
+    if (isMaxed || !u.unlock()) continue;
 
     const b = document.createElement('button');
     b.className = 'up';
@@ -593,9 +717,10 @@ function renderUpgrades() {
     b.innerHTML =
       '<div class="top"><span class="name">' + u.name + '</span>' +
       '<span class="cost">' + money(costOf(u)) + '</span></div>' +
-      '<div class="desc">' + u.desc + '</div>' +
+      '<div class="desc"></div>' +
       (u.warn ? '<div class="cost-warn">' + u.warn + '</div>' : '') +
       (u.repeatable && u.count > 0 ? '<div class="owned">owned ×' + u.count + '</div>' : '');
+    b.querySelector('.desc').textContent = u.desc();
     b.onclick = () => buy(u);
     box.appendChild(b);
     shown++;
@@ -603,8 +728,67 @@ function renderUpgrades() {
 
   if (shown === 0) {
     box.innerHTML = '<div style="padding:14px;color:var(--dimmer);font-size:11px">' +
-                    'Ship a few features first.</div>';
+                    'Ship a feature first.</div>';
   }
+}
+
+/* ==========================================================================
+   TUNING PANEL — writes straight into CONFIG; everything reads it live
+   ========================================================================== */
+function renderTuning() {
+  const box = $('tuning');
+  box.innerHTML = '';
+
+  for (const t of TUNABLES) {
+    const row = document.createElement('div');
+    row.className = 'tune';
+
+    const lab = document.createElement('label');
+    lab.textContent = t.label;
+    lab.htmlFor = 'tune-' + t.key;
+
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.id = 'tune-' + t.key;
+    inp.step = t.step;
+    if (t.min !== undefined) inp.min = t.min;
+    if (t.max !== undefined) inp.max = t.max;
+    inp.value = CONFIG[t.key];
+
+    inp.addEventListener('input', () => {
+      const v = parseFloat(inp.value);
+      if (!Number.isFinite(v)) { inp.classList.add('invalid'); return; }
+      let clamped = v;
+      if (t.min !== undefined) clamped = Math.max(t.min, clamped);
+      if (t.max !== undefined) clamped = Math.min(t.max, clamped);
+      inp.classList.toggle('invalid', clamped !== v);
+      CONFIG[t.key] = clamped;
+      renderUpgrades();
+    });
+
+    row.append(lab, inp);
+    box.appendChild(row);
+  }
+
+  const note = document.createElement('div');
+  note.className = 'tunenote';
+  note.textContent = 'Every value applies immediately — no reset needed. ' +
+                     'Upgrades store multipliers, not fixed numbers, so changing ' +
+                     'a base value re-derives everything you have already bought.';
+
+  const acts = document.createElement('div');
+  acts.className = 'actions';
+  const rst = document.createElement('button');
+  rst.textContent = 'Restore defaults';
+  rst.onclick = () => {
+    Object.assign(CONFIG, DEFAULTS);
+    renderTuning();
+    renderUpgrades();
+    log('Tuning restored to defaults.', 'note');
+  };
+  acts.appendChild(rst);
+
+  box.append(note, acts);
 }
 
 /* ==========================================================================
@@ -621,19 +805,44 @@ promptEl.addEventListener('keydown', e => {
 
 $('fixbtn').onclick = () => { fixBug(); promptEl.focus(); };
 
-$('reset').onclick = () => {
-  if (!confirm('Reset the game?')) return;
+/* Two-step reset. `confirm()` is auto-dismissed in some embedded browsers,
+   which silently swallowed the whole handler — so the confirmation is inline. */
+const resetBtn = $('reset');
+let resetArmed = false, resetTimer = null;
+
+function disarmReset() {
+  resetArmed = false;
+  resetBtn.classList.remove('armed');
+  resetBtn.textContent = 'reset';
+  if (resetTimer) { clearTimeout(resetTimer); resetTimer = null; }
+}
+
+resetBtn.onclick = () => {
+  if (!resetArmed) {
+    resetArmed = true;
+    resetBtn.classList.add('armed');
+    resetBtn.textContent = 'click again to confirm';
+    resetTimer = setTimeout(disarmReset, 3000);
+    return;
+  }
+  disarmReset();
   state = freshState();
   upgrades = makeUpgrades();
   logEl.innerHTML = '';
+  lastKey = '';
   renderUpgrades();
+  render();
   log('Fresh repo. Good luck.', 'note');
+  promptEl.focus();
 };
 
-// unlock checks are cheap; re-render the shop when the visible set changes
+// rebuild the shop only when the visible set actually changes
 let lastKey = '';
 function unlockWatch() {
-  const key = upgrades.map(u => (u.unlock() ? 1 : 0) + ':' + u.count).join(',');
+  let key = '';
+  for (const u of upgrades) {
+    key += (u.unlock() ? 1 : 0) + (u.maxed && u.maxed() ? 'm' : '') + ':' + u.count + ',';
+  }
   if (key !== lastKey) { lastKey = key; renderUpgrades(); }
 }
 
@@ -647,6 +856,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+renderTuning();
 renderUpgrades();
 render();
 log('You have an app. It has no users. Ship something.', 'note');
