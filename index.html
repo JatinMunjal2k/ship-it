@@ -35,14 +35,14 @@
     content: "";
     position: fixed; inset: 0;
     background: var(--bad);
-    opacity: 0.14;
+    opacity: 0.16;
     pointer-events: none;
     animation: flash 0.5s ease-out forwards;
     z-index: 100;
   }
   @keyframes flash { to { opacity: 0; } }
 
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 20px; }
 
   /* ---------- header ---------- */
   header {
@@ -54,19 +54,17 @@
   .phase {
     margin-left: auto;
     font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--accent);
-    border: 1px solid var(--accent);
+    color: var(--accent); border: 1px solid var(--accent);
     padding: 2px 8px; border-radius: 3px;
   }
 
-  /* ---------- stats ---------- */
+  /* ---------- stats (flex so hidden tiles reflow) ---------- */
   .stats {
-    display: grid; grid-template-columns: repeat(5, 1fr);
-    gap: 1px; background: var(--border);
+    display: flex; gap: 1px; background: var(--border);
     border: 1px solid var(--border); border-radius: 6px;
     overflow: hidden; margin: 16px 0;
   }
-  .stat { background: var(--panel); padding: 10px 12px; }
+  .stat { background: var(--panel); padding: 10px 12px; flex: 1 1 0; min-width: 0; }
   .stat .label {
     font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
     color: var(--dimmer); margin-bottom: 2px;
@@ -78,43 +76,52 @@
   .value.warn { color: var(--warn); }
 
   /* ---------- layout ---------- */
-  .cols { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
-  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+  .cols { display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
 
   .panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; overflow: hidden;
   }
-  .panel + .panel { margin-top: 16px; }
+  .panel + .panel, .cols + .panel { margin-top: 16px; }
   .panel h2 {
     font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--dimmer); margin: 0;
-    padding: 9px 12px; border-bottom: 1px solid var(--border);
-    background: var(--panel-2);
+    color: var(--dimmer); margin: 0; padding: 9px 12px;
+    border-bottom: 1px solid var(--border); background: var(--panel-2);
+    display: flex; justify-content: space-between; gap: 8px;
   }
+  .panel h2 .meta { color: var(--dim); text-transform: none; letter-spacing: 0; }
 
-  /* ---------- prompt ---------- */
-  .promptbox { padding: 14px; }
+  /* ---------- claude code: history + prompt ---------- */
+  #history {
+    height: 230px; overflow-y: auto; padding: 10px 12px; font-size: 12px;
+  }
+  #history .h-you { color: var(--text); padding-top: 6px; }
+  #history .h-you .c { color: var(--accent); font-weight: 700; margin-right: 6px; }
+  #history .h-res { color: var(--dim); padding-left: 16px; }
+  #history .h-res .ok   { color: var(--good); }
+  #history .h-res .warn { color: var(--warn); }
+  #history .h-res .bad  { color: var(--bad); }
+  #history .h-res.pending { color: var(--dimmer); }
+  #history .h-empty { color: var(--dimmer); }
+
+  .promptbox { padding: 12px 14px 14px; border-top: 1px solid var(--border); }
   .promptrow {
     position: relative; overflow: hidden;
     display: flex; align-items: center; gap: 8px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 5px; padding: 10px 12px;
-    transition: border-color 0.15s;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 5px; padding: 10px 12px; transition: border-color 0.15s;
   }
   .promptrow:focus-within { border-color: var(--accent); }
-  .promptrow.cooling { border-color: var(--border); }
-  .promptrow.cooling .chev { color: var(--dimmer); }
-  /* cooldown fill sweeps left→right as the wait completes */
-  .cdbar {
+  .promptrow.busy .chev { color: var(--dimmer); }
+  .promptrow.alarm { border-color: var(--bad); }
+  .bar {
     position: absolute; left: 0; top: 0; bottom: 0;
-    background: var(--accent); opacity: 0.13;
-    width: 0%; pointer-events: none;
-    transition: width 0.06s linear;
+    width: 0%; pointer-events: none; opacity: 0.14;
+    background: var(--accent); transition: width 0.06s linear;
   }
+  .bar.fix    { background: var(--good); }
+  .bar.repair { background: var(--bad); }
   .chev { color: var(--accent); font-weight: 700; position: relative; }
   #prompt {
     flex: 1; background: none; border: none; outline: none;
@@ -127,25 +134,43 @@
   }
   .hint kbd {
     background: var(--panel-2); border: 1px solid var(--border);
-    border-radius: 3px; padding: 1px 5px; font: inherit; font-size: 10px;
-    color: var(--dim);
+    border-radius: 3px; padding: 1px 5px; font: inherit; font-size: 10px; color: var(--dim);
   }
-  #cdlabel { color: var(--dim); white-space: nowrap; }
+  #statuslabel { color: var(--dim); white-space: nowrap; }
 
   .actions { display: flex; gap: 8px; margin-top: 10px; }
-  .actions button {
+  .actions button, .btn {
     background: var(--panel-2); color: var(--text);
     border: 1px solid var(--border); border-radius: 4px;
     padding: 7px 12px; font: inherit; font-size: 12px; cursor: pointer;
     transition: background 0.12s, border-color 0.12s;
   }
-  .actions button:hover:not(:disabled) { background: #26262b; border-color: #3a3a42; }
+  .actions button:hover:not(:disabled), .btn:hover:not(:disabled) {
+    background: #26262b; border-color: #3a3a42;
+  }
   .actions button:disabled { opacity: 0.35; cursor: default; }
 
-  /* ---------- log ---------- */
+  /* ---------- incident alert ---------- */
+  #alert {
+    margin: 0 14px 12px; padding: 10px 12px;
+    border: 1px solid var(--bad); border-radius: 5px;
+    background: rgba(229, 72, 77, 0.07);
+  }
+  #alert .ahead {
+    color: var(--bad); font-weight: 700; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;
+  }
+  #alert-err {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+    padding: 8px 10px; font-size: 11.5px; color: var(--text);
+    user-select: all; cursor: text; word-break: break-word; line-height: 1.5;
+  }
+  #alert .arow { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  #alert .bleed { color: var(--bad); font-size: 11px; }
+
+  /* ---------- event log ---------- */
   #log {
-    height: 260px; overflow-y: auto;
-    padding: 10px 12px; font-size: 12px;
+    height: 306px; overflow-y: auto; padding: 10px 12px; font-size: 12px;
     display: flex; flex-direction: column-reverse;
   }
   #log div { padding: 2px 0; color: var(--dim); word-break: break-word; }
@@ -155,53 +180,77 @@
   #log .fix      { color: var(--good); }
   #log .note     { color: var(--warn); }
 
-  /* ---------- upgrades ---------- */
-  #upgrades { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
-  .up {
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    border-radius: 5px; padding: 10px;
-    cursor: pointer; text-align: left; width: 100%;
-    font: inherit; color: var(--text);
+  /* ---------- skill tree ---------- */
+  .tree { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 14px; }
+  @media (max-width: 1000px) { .tree { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px)  { .tree { grid-template-columns: 1fr; } }
+
+  .branch { min-width: 0; }
+  .branch .bname {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--accent); margin-bottom: 10px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .branch .bname i { color: var(--dimmer); font-style: normal; float: right; }
+
+  .node {
+    position: relative; display: block; width: 100%; text-align: left;
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 5px; padding: 8px 9px;
+    font: inherit; cursor: pointer;
     transition: background 0.12s, border-color 0.12s, opacity 0.12s;
   }
-  .up:hover:not(.locked) { border-color: #3a3a42; background: #232329; }
-  .up.locked { opacity: 0.4; cursor: default; }
-  .up .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .up .name { font-weight: 600; font-size: 12px; }
-  .up .cost { color: var(--good); font-size: 12px; white-space: nowrap; }
-  .up.locked .cost { color: var(--dimmer); }
-  .up .desc { font-size: 11px; color: var(--dim); margin-top: 4px; }
-  .up .owned {
-    font-size: 10px; color: var(--accent); text-transform: uppercase;
-    letter-spacing: 0.5px; margin-top: 4px;
+  .node + .node { margin-top: 20px; }
+  /* connector between consecutive nodes in a branch */
+  .node + .node::before {
+    content: ''; position: absolute; left: 50%; top: -20px;
+    width: 1px; height: 20px; background: var(--border);
   }
-  .up .cost-warn { color: var(--bad); font-size: 11px; margin-top: 4px; }
-  .up .maxed { color: var(--dimmer); font-size: 11px; margin-top: 4px; }
+  .node + .node.linked::before { background: var(--accent); opacity: 0.55; }
 
-  /* ---------- tuning panel ---------- */
-  #tuning { padding: 4px 12px 12px; }
+  .node .ntop { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+  .node .nname { font-weight: 600; font-size: 11.5px; }
+  .node .ncost { font-size: 11px; white-space: nowrap; color: var(--good); }
+  .node .ndesc { font-size: 10.5px; color: var(--dim); margin-top: 3px; line-height: 1.45; }
+  .node .ntag {
+    font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.5px;
+    margin-top: 4px; color: var(--accent);
+  }
+  .node .nwarn { font-size: 10.5px; color: var(--bad); margin-top: 3px; }
+
+  .node.poor   { cursor: default; }
+  .node.poor .ncost { color: var(--dimmer); }
+  .node.locked { opacity: 0.3; cursor: default; }
+  .node.locked .ncost { color: var(--dimmer); }
+  .node.owned  { border-color: var(--accent); background: rgba(217,119,87,0.06); cursor: default; }
+  .node.owned .ncost { color: var(--accent); }
+  .node.maxed  { opacity: 0.6; cursor: default; }
+  .node:hover:not(.locked):not(.owned):not(.poor):not(.maxed) {
+    border-color: var(--accent); background: #232329;
+  }
+
+  /* ---------- tuning ---------- */
+  #tuning { padding: 12px 14px; }
+  .tunegrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 20px; }
+  @media (max-width: 760px) { .tunegrid { grid-template-columns: 1fr; } }
   .tune {
     display: flex; align-items: center; gap: 8px;
     padding: 4px 0; border-bottom: 1px solid #202026;
   }
-  .tune:last-of-type { border-bottom: none; }
   .tune label { flex: 1; font-size: 11px; color: var(--dim); }
   .tune input {
-    width: 78px; background: var(--bg); color: var(--text);
+    width: 76px; background: var(--bg); color: var(--text);
     border: 1px solid var(--border); border-radius: 4px;
     padding: 3px 6px; font: inherit; font-size: 11px; text-align: right;
   }
   .tune input:focus { outline: none; border-color: var(--accent); }
   .tune input.invalid { border-color: var(--bad); }
-  .tunenote { font-size: 10px; color: var(--dimmer); padding: 8px 0; line-height: 1.45; }
-  #tuning .actions { margin-top: 10px; }
+  .tunenote { font-size: 10px; color: var(--dimmer); padding: 10px 0 0; line-height: 1.5; }
   summary {
     font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
     color: var(--dimmer); padding: 9px 12px; background: var(--panel-2);
     border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
   }
-  summary::marker { color: var(--dimmer); }
   summary:hover { color: var(--dim); }
 
   footer {
@@ -246,51 +295,60 @@
       <div class="value warn" id="s-quality">50%</div>
       <div class="sub">clean-ship rate</div>
     </div>
-    <div class="stat">
+    <div class="stat" id="tile-bugs" style="display:none">
       <div class="label">Open Bugs</div>
-      <div class="value bad" id="s-bugs">??</div>
-      <div class="sub" id="s-bugsub">no monitoring</div>
+      <div class="value bad" id="s-bugs">0</div>
+      <div class="sub" id="s-bugsub">visible</div>
     </div>
   </div>
 
   <div class="cols">
-    <div>
-      <div class="panel">
-        <h2>claude code</h2>
-        <div class="promptbox">
-          <div class="promptrow" id="promptrow">
-            <div class="cdbar" id="cdbar"></div>
-            <span class="chev">&gt;</span>
-            <input id="prompt" autocomplete="off" spellcheck="false" placeholder="add dark mode to the settings page">
-          </div>
-          <div class="hint">
-            <span>Type anything and press <kbd>Enter</kbd> to ship it.</span>
-            <span id="cdlabel">cooldown 5.0s</span>
-          </div>
-          <div class="actions">
-            <button id="fixbtn" style="display:none">Fix a bug</button>
-          </div>
+    <div class="panel">
+      <h2>claude code <span class="meta" id="h-meta"></span></h2>
+
+      <div id="history"><div class="h-empty">No history yet. Describe a feature and press Enter.</div></div>
+
+      <div id="alert" style="display:none">
+        <div class="ahead">Production incident — paste the error into the prompt to fix it</div>
+        <div id="alert-err"></div>
+        <div class="arow">
+          <button class="btn" id="copybtn">Copy error</button>
+          <span class="bleed" id="bleedlabel"></span>
         </div>
       </div>
 
-      <div class="panel">
-        <h2>event log</h2>
-        <div id="log"></div>
+      <div class="promptbox">
+        <div class="promptrow" id="promptrow">
+          <div class="bar" id="bar"></div>
+          <span class="chev">&gt;</span>
+          <input id="prompt" autocomplete="off" spellcheck="false"
+                 placeholder="add dark mode to the settings page">
+        </div>
+        <div class="hint">
+          <span id="hintlabel">Describe anything and press <kbd>Enter</kbd> to build it.</span>
+          <span id="statuslabel">build 5.0s</span>
+        </div>
+        <div class="actions">
+          <button id="fixbtn" style="display:none">Fix a bug</button>
+        </div>
       </div>
     </div>
 
-    <div>
-      <div class="panel">
-        <h2>spend</h2>
-        <div id="upgrades"></div>
-      </div>
-
-      <details class="panel" id="tunepanel">
-        <summary>tuning &nbsp;·&nbsp; live config</summary>
-        <div id="tuning"></div>
-      </details>
+    <div class="panel">
+      <h2>event log</h2>
+      <div id="log"></div>
     </div>
   </div>
+
+  <div class="panel">
+    <h2>skill tree <span class="meta" id="tree-meta"></span></h2>
+    <div class="tree" id="tree"></div>
+  </div>
+
+  <details class="panel" id="tunepanel">
+    <summary>tuning &nbsp;·&nbsp; live config</summary>
+    <div id="tuning"></div>
+  </details>
 
   <footer>
     <span id="f-stats">0 incidents · 0 users lost</span>
@@ -303,180 +361,208 @@
 "use strict";
 
 /* ==========================================================================
-   CONFIG — all balance lives here, and every value is editable live from the
-   tuning panel in the UI. Nothing below reads these at boot only; the derived
-   getters recompute from CONFIG every frame, so edits apply immediately.
+   CONFIG — every value is editable live from the tuning panel.
+   Nothing is read once at boot: the derived getters below recompute from
+   CONFIG each frame, so edits apply immediately even to owned skills.
    ========================================================================== */
 const CONFIG = {
-  USERS_PER_FEATURE_MIN:   6,      // each feature attracts a random number of
-  USERS_PER_FEATURE_MAX:  18,      // users in this (inclusive) range
+  USERS_PER_FEATURE_MIN:   6,      // a shipped feature attracts a random count
+  USERS_PER_FEATURE_MAX:  18,      // of users in this inclusive range
 
   REVENUE_PER_USER:        0.015,  // $ per user per second
   BASE_QUALITY:            0.50,   // chance a shipped feature is bug-free
   BASE_USER_CAP:         250,      // capacity before you buy servers
 
-  INCIDENT_CHANCE_PER_BUG: 0.004,  // per bug, per second
-  INCIDENT_MIN_LOSS:       0.06,   // fraction of users lost, low end
-  INCIDENT_MAX_LOSS:       0.22,   // ...high end
+  BUILD_TIME_START:        5.0,    // seconds a manual feature takes to build
+  BUILD_TIME_MIN:          0.1,    // floor — skills can never go below this
+  REPAIR_TIME_START:       5.0,    // seconds to repair a pasted error
+  REPAIR_TIME_MIN:         0.5,    // floor for repairs
 
   AGENT_INTERVAL:          6.0,    // seconds between each agent's auto-ship
 
-  MANUAL_COOLDOWN_START:   5.0,    // seconds between manual ships, at the start
-  MANUAL_COOLDOWN_MIN:     0.1,    // floor — upgrades can never go below this
-  COOLDOWN_FACTOR:         0.75,   // cooldown multiplier per speed upgrade
+  INCIDENT_CHANCE_PER_BUG: 0.004,  // per bug, per second
+  INCIDENT_MIN_LOSS:       0.04,   // instant churn when it fires, low end
+  INCIDENT_MAX_LOSS:       0.12,   // ...high end
+  INCIDENT_BLEED:          0.025,  // extra fraction of users lost per second
+                                   // for as long as the incident is unresolved
 };
 
 const DEFAULTS = Object.assign({}, CONFIG);
 
-/* Which CONFIG keys appear in the tuning panel, and how they step. */
 const TUNABLES = [
-  { key: 'USERS_PER_FEATURE_MIN',   label: 'Users / feature — min',    step: 1,     min: 0 },
-  { key: 'USERS_PER_FEATURE_MAX',   label: 'Users / feature — max',    step: 1,     min: 0 },
-  { key: 'REVENUE_PER_USER',        label: '$ per user / sec',         step: 0.005, min: 0 },
-  { key: 'BASE_QUALITY',            label: 'Base code quality',        step: 0.05,  min: 0, max: 1 },
-  { key: 'BASE_USER_CAP',           label: 'Base user cap',            step: 50,    min: 1 },
-  { key: 'INCIDENT_CHANCE_PER_BUG', label: 'Incident chance /bug /s',  step: 0.001, min: 0, max: 1 },
-  { key: 'INCIDENT_MIN_LOSS',       label: 'Incident churn — min',     step: 0.01,  min: 0, max: 1 },
-  { key: 'INCIDENT_MAX_LOSS',       label: 'Incident churn — max',     step: 0.01,  min: 0, max: 1 },
-  { key: 'AGENT_INTERVAL',          label: 'Agent interval (s)',       step: 0.5,   min: 0.1 },
-  { key: 'MANUAL_COOLDOWN_START',   label: 'Start cooldown (s)',       step: 0.5,   min: 0 },
-  { key: 'MANUAL_COOLDOWN_MIN',     label: 'Min cooldown (s)',         step: 0.1,   min: 0 },
-  { key: 'COOLDOWN_FACTOR',         label: 'Cooldown × per upgrade',   step: 0.05,  min: 0.05, max: 1 },
+  { key: 'USERS_PER_FEATURE_MIN',   label: 'Users / feature — min',   step: 1,     min: 0 },
+  { key: 'USERS_PER_FEATURE_MAX',   label: 'Users / feature — max',   step: 1,     min: 0 },
+  { key: 'REVENUE_PER_USER',        label: '$ per user / sec',        step: 0.005, min: 0 },
+  { key: 'BASE_QUALITY',            label: 'Base code quality',       step: 0.05,  min: 0, max: 1 },
+  { key: 'BASE_USER_CAP',           label: 'Base user cap',           step: 50,    min: 1 },
+  { key: 'BUILD_TIME_START',        label: 'Build time (s)',          step: 0.5,   min: 0 },
+  { key: 'BUILD_TIME_MIN',          label: 'Min build time (s)',      step: 0.1,   min: 0 },
+  { key: 'REPAIR_TIME_START',       label: 'Repair time (s)',         step: 0.5,   min: 0 },
+  { key: 'REPAIR_TIME_MIN',         label: 'Min repair time (s)',     step: 0.1,   min: 0 },
+  { key: 'AGENT_INTERVAL',          label: 'Agent interval (s)',      step: 0.5,   min: 0.1 },
+  { key: 'INCIDENT_CHANCE_PER_BUG', label: 'Incident chance /bug /s', step: 0.001, min: 0, max: 1 },
+  { key: 'INCIDENT_MIN_LOSS',       label: 'Incident churn — min',    step: 0.01,  min: 0, max: 1 },
+  { key: 'INCIDENT_MAX_LOSS',       label: 'Incident churn — max',    step: 0.01,  min: 0, max: 1 },
+  { key: 'INCIDENT_BLEED',          label: 'Churn /sec unresolved',   step: 0.005, min: 0, max: 1 },
 ];
 
 /* ==========================================================================
-   STATE
-   Upgrades store *modifiers*, never absolute values — that is what lets the
-   config panel stay live. Effective numbers come from the getters below.
+   STATE — skills store *modifiers*, never absolute values.
    ========================================================================== */
 function freshState() {
   return {
-    users: 0,
-    cash: 0,
-    features: 0,
-    bugs: 0,
+    users: 0, cash: 0, features: 0, bugs: 0,
 
-    qualityBonus:        0,    // + to BASE_QUALITY
-    capBonus:            0,    // + to BASE_USER_CAP
-    agentIntervalMult:   1,    // × AGENT_INTERVAL
-    cooldownMult:        1,    // × MANUAL_COOLDOWN_START
-    reviewDelay:         0,    // flat seconds added after the floor
-    incidentMitigation:  1,    // × incident churn
+    qualityBonus:       0,     // + to BASE_QUALITY
+    capBonus:           0,     // + to BASE_USER_CAP
+    buildMult:          1,     // × BUILD_TIME_START
+    buildFlat:          0,     // flat seconds added after the floor
+    repairMult:         1,     // × REPAIR_TIME_START
+    agentIntervalMult:  1,     // × AGENT_INTERVAL
+    bleedMult:          1,     // × INCIDENT_BLEED
+    agents:             0,
+    monitoring:      false,
 
-    agents: 0,
     agentTimer: 0,
-    cooldown: 0,
-    cooldownFrom: 1,           // what the current cooldown started at, for the bar
-    monitoring: false,
+    busy: null,                // { kind:'build'|'fix'|'repair', total, left, entry }
+    incident: null,            // { msg, code, text }
 
-    incidents: 0,
-    usersLost: 0,
-    elapsed: 0,
+    incidents: 0, usersLost: 0, elapsed: 0,
   };
 }
 let state = freshState();
 
-/* ---- derived values (recomputed every frame, so CONFIG edits are live) ---- */
+/* ---- derived values, recomputed every frame ---- */
 const quality       = () => Math.max(0, Math.min(0.99, CONFIG.BASE_QUALITY + state.qualityBonus));
 const userCap       = () => Math.max(1, CONFIG.BASE_USER_CAP + state.capBonus);
 const agentInterval = () => Math.max(0.05, CONFIG.AGENT_INTERVAL * state.agentIntervalMult);
-const manualCooldown = () =>
-  Math.max(CONFIG.MANUAL_COOLDOWN_MIN, CONFIG.MANUAL_COOLDOWN_START * state.cooldownMult)
-  + state.reviewDelay;
+const buildTime     = () => Math.max(CONFIG.BUILD_TIME_MIN, CONFIG.BUILD_TIME_START * state.buildMult)
+                            + state.buildFlat;
+const repairTime    = () => Math.max(CONFIG.REPAIR_TIME_MIN, CONFIG.REPAIR_TIME_START * state.repairMult);
+const bleedRate     = () => Math.max(0, CONFIG.INCIDENT_BLEED * state.bleedMult);
 
-/* True once speed upgrades have bottomed out against the floor. */
-const cooldownMaxed = () =>
-  CONFIG.MANUAL_COOLDOWN_START * state.cooldownMult <= CONFIG.MANUAL_COOLDOWN_MIN + 1e-9;
+const atBuildFloor  = () => CONFIG.BUILD_TIME_START  * state.buildMult  <= CONFIG.BUILD_TIME_MIN  + 1e-9;
+const atRepairFloor = () => CONFIG.REPAIR_TIME_START * state.repairMult <= CONFIG.REPAIR_TIME_MIN + 1e-9;
 
 function usersPerFeature() {
   const a = Math.floor(CONFIG.USERS_PER_FEATURE_MIN);
   const b = Math.floor(CONFIG.USERS_PER_FEATURE_MAX);
-  const lo = Math.max(0, Math.min(a, b));
-  const hi = Math.max(0, Math.max(a, b));
+  const lo = Math.max(0, Math.min(a, b)), hi = Math.max(0, Math.max(a, b));
   return lo + Math.floor(Math.random() * (hi - lo + 1));
 }
 
 /* ==========================================================================
-   UPGRADES
+   SKILL TREE
+   Each node may declare `req` (id of its prerequisite). A node is locked
+   until its prerequisite is owned. `pct` helpers keep quality text honest.
    ========================================================================== */
-function makeUpgrades() { return [
-  {
-    id: 'speed',
-    name: 'Better prompts',
-    desc: () => 'Ship cooldown ×' + CONFIG.COOLDOWN_FACTOR.toFixed(2) +
-                '. Now ' + manualCooldown().toFixed(1) + 's.',
-    cost: 25, scale: 1.5, repeatable: true, count: 0,
-    unlock: () => state.features >= 1,
-    maxed:  () => cooldownMaxed(),
-    apply:  () => { state.cooldownMult *= CONFIG.COOLDOWN_FACTOR; },
-  },
-  {
-    id: 'servers',
-    name: 'Bigger servers',
-    desc: () => '+400 user capacity.',
-    cost: 60, scale: 1.7, repeatable: true, count: 0,
-    unlock: () => state.features >= 3,
-    apply:  () => { state.capBonus += 400; },
-  },
-  {
-    id: 'tests',
-    name: 'Unit tests',
-    desc: () => 'Code quality +20 points.',
-    cost: 75, repeatable: false, count: 0,
-    unlock: () => state.features >= 5,
-    apply:  () => { state.qualityBonus += 0.20; },
-  },
-  {
-    id: 'agent',
-    name: 'Background agent',
-    desc: () => 'Ships a feature every ' + agentInterval().toFixed(1) +
-                's, forever. Never sleeps, never asks.',
-    cost: 150, scale: 1.6, repeatable: true, count: 0,
-    unlock: () => state.features >= 8,
-    apply:  () => { state.agents += 1; },
-  },
-  {
-    id: 'monitoring',
-    name: 'Monitoring',
-    desc: () => 'See your actual bug count. Unlocks manual bug fixing.',
-    cost: 400, repeatable: false, count: 0,
-    unlock: () => state.incidents >= 1,
-    apply:  () => { state.monitoring = true; },
-  },
-  {
-    id: 'review',
-    name: 'Code review',
-    desc: () => 'Quality +15 points. Agents slow 35%.',
-    warn: 'Adds a flat +0.6s to every ship, under the floor.',
-    cost: 900, repeatable: false, count: 0,
-    unlock: () => state.features >= 30,
-    apply:  () => {
-      state.qualityBonus += 0.15;
-      state.reviewDelay += 0.6;
-      state.agentIntervalMult *= 1.35;
-    },
-  },
-  {
-    id: 'ci',
-    name: 'CI/CD pipeline',
-    desc: () => 'Quality +10 points. Agents ship 20% faster.',
-    cost: 2500, repeatable: false, count: 0,
-    unlock: () => state.features >= 50 && state.cash >= 900,
-    apply:  () => {
-      state.qualityBonus += 0.10;
-      state.agentIntervalMult *= 0.8;
-    },
-  },
-  {
-    id: 'oncall',
-    name: 'On-call rotation',
-    desc: () => 'Incidents cost half as many users. Someone is always awake.',
-    cost: 6000, repeatable: false, count: 0,
-    unlock: () => state.incidents >= 5 && state.features >= 80,
-    apply:  () => { state.incidentMitigation *= 0.5; },
-  },
+const pts = n => (n * 100).toFixed(0);
+
+function makeTree() { return [
+
+  { branch: 'Velocity', note: 'build time', nodes: [
+    { id:'v1', name:'Touch typing', cost:25,
+      desc:()=>'Build time ×0.80.',
+      apply:()=>{ state.buildMult *= 0.80; }, maxed:atBuildFloor },
+    { id:'v2', name:'Prompt snippets', cost:180, req:'v1',
+      desc:()=>'Build time ×0.80.',
+      apply:()=>{ state.buildMult *= 0.80; }, maxed:atBuildFloor },
+    { id:'v3', name:'Parallel subagents', cost:900, req:'v2',
+      desc:()=>'Build time ×0.75.',
+      apply:()=>{ state.buildMult *= 0.75; }, maxed:atBuildFloor },
+    { id:'v4', name:'Context compaction', cost:3000, scale:1.6, repeat:true, req:'v3',
+      desc:()=>'Build time ×0.90. Now '+buildTime().toFixed(2)+'s.',
+      apply:()=>{ state.buildMult *= 0.90; }, maxed:atBuildFloor },
+  ]},
+
+  { branch: 'Capacity', note: 'user ceiling', nodes: [
+    { id:'c1', name:'Bigger box', cost:60, scale:1.7, repeat:true,
+      desc:()=>'+400 user capacity.',
+      apply:()=>{ state.capBonus += 400; } },
+    { id:'c2', name:'Load balancer', cost:600, req:'c1',
+      desc:()=>'+2,000 user capacity.',
+      apply:()=>{ state.capBonus += 2000; } },
+    { id:'c3', name:'Autoscaling', cost:3200, req:'c2',
+      desc:()=>'+8,000 user capacity.',
+      apply:()=>{ state.capBonus += 8000; } },
+    { id:'c4', name:'Multi-region', cost:14000, scale:1.7, repeat:true, req:'c3',
+      desc:()=>'+30,000 user capacity.',
+      apply:()=>{ state.capBonus += 30000; } },
+  ]},
+
+  { branch: 'Quality', note: 'clean-ship rate', nodes: [
+    { id:'q1', name:'Linter', cost:40,
+      desc:()=>'Quality +4 points.',
+      apply:()=>{ state.qualityBonus += 0.04; } },
+    { id:'q2', name:'Type checking', cost:130, req:'q1',
+      desc:()=>'Quality +6 points.',
+      apply:()=>{ state.qualityBonus += 0.06; } },
+    { id:'q3', name:'Unit tests', cost:340, req:'q2',
+      desc:()=>'Quality +7 points.',
+      apply:()=>{ state.qualityBonus += 0.07; } },
+    { id:'q4', name:'Integration tests', cost:800, req:'q3',
+      desc:()=>'Quality +6 points.',
+      apply:()=>{ state.qualityBonus += 0.06; } },
+    { id:'q5', name:'Code review', cost:1600, req:'q4',
+      desc:()=>'Quality +9 points. Agents 35% slower.',
+      warn:'Adds +0.6s to every build, under the floor.',
+      apply:()=>{ state.qualityBonus += 0.09; state.buildFlat += 0.6;
+                  state.agentIntervalMult *= 1.35; } },
+    { id:'q6', name:'CI/CD pipeline', cost:3000, req:'q4',
+      desc:()=>'Quality +5 points. Agents 20% faster.',
+      apply:()=>{ state.qualityBonus += 0.05; state.agentIntervalMult *= 0.80; } },
+    { id:'q7', name:'Fuzz testing', cost:6500, scale:1.55, repeat:true, req:'q6',
+      desc:()=>'Quality +2 points. Now '+pts(quality())+'%.',
+      apply:()=>{ state.qualityBonus += 0.02; },
+      maxed:()=>quality() >= 0.99 - 1e-9 },
+  ]},
+
+  { branch: 'Automation', note: 'ships itself', nodes: [
+    { id:'a1', name:'Background agent', cost:150, scale:1.6, repeat:true,
+      desc:()=>'One more agent shipping every '+agentInterval().toFixed(1)+'s.',
+      apply:()=>{ state.agents += 1; } },
+    { id:'a2', name:'Agent teams', cost:1400, req:'a1',
+      desc:()=>'All agents ship 20% faster.',
+      apply:()=>{ state.agentIntervalMult *= 0.80; } },
+    { id:'a3', name:'Orchestrator', cost:5500, req:'a2',
+      desc:()=>'+3 agents, hired all at once.',
+      apply:()=>{ state.agents += 3; } },
+    { id:'a4', name:'Self-improving loop', cost:18000, scale:1.7, repeat:true, req:'a3',
+      desc:()=>'+5 agents. They are writing their own prompts now.',
+      apply:()=>{ state.agents += 5; } },
+  ]},
+
+  { branch: 'Reliability', note: 'incidents', nodes: [
+    { id:'r1', name:'Monitoring', cost:400,
+      desc:()=>'Reveals your open bug count. Unlocks manual bug fixing.',
+      apply:()=>{ state.monitoring = true; } },
+    { id:'r2', name:'Alerting', cost:900, req:'r1',
+      desc:()=>'Repair time ×0.70.',
+      apply:()=>{ state.repairMult *= 0.70; }, maxed:atRepairFloor },
+    { id:'r3', name:'Runbooks', cost:2400, req:'r2',
+      desc:()=>'Repair time ×0.65. Now '+repairTime().toFixed(2)+'s.',
+      apply:()=>{ state.repairMult *= 0.65; }, maxed:atRepairFloor },
+    { id:'r4', name:'On-call rotation', cost:6000, req:'r2',
+      desc:()=>'Churn while broken ×0.50. Someone is always awake.',
+      apply:()=>{ state.bleedMult *= 0.50; } },
+    { id:'r5', name:'Auto-remediation', cost:12000, scale:1.6, repeat:true, req:'r3',
+      desc:()=>'Repair time ×0.85.',
+      apply:()=>{ state.repairMult *= 0.85; }, maxed:atRepairFloor },
+  ]},
+
 ]; }
-let upgrades = makeUpgrades();
+let tree = makeTree();
+
+const allNodes = () => tree.flatMap(b => b.nodes);
+const nodeById = id => allNodes().find(n => n.id === id);
+
+/* node predicates */
+const owned    = n => (n.count || 0) > 0;
+const isMaxed  = n => !!(n.maxed && n.maxed());
+const unlocked = n => !n.req || owned(nodeById(n.req));
+const spent    = n => !n.repeat && owned(n);
+const costOf   = n => n.repeat ? Math.floor(n.cost * Math.pow(n.scale || 1.5, n.count || 0)) : n.cost;
+const buyable  = n => unlocked(n) && !spent(n) && !isMaxed(n) && state.cash >= costOf(n);
 
 /* ==========================================================================
    FLAVOR
@@ -506,6 +592,20 @@ const BUGS = [
   "Auth token never expiring", "Uncaught promise rejection in checkout",
 ];
 
+/* Errors you actually have to copy. Kept short enough to paste comfortably. */
+const ERRORS = [
+  "TypeError: Cannot read properties of null (reading 'id') at UserProfile.render (profile.tsx:142)",
+  "FATAL: connection pool exhausted — 100/100 in use at db/pool.ts:88",
+  "RangeError: Maximum call stack size exceeded at normalize (reducers/cart.ts:31)",
+  "Error: ETIMEDOUT — upstream payments-api did not respond in 30000ms",
+  "PanicException: index out of bounds: len is 0 but index is 3 at render_grid",
+  "ReferenceError: featureFlags is not defined at bootstrap (main.js:9)",
+  "SequelizeUniqueConstraintError: duplicate key value violates users_email_key",
+  "OOMKilled: container exceeded memory limit 512Mi at worker-7c4f",
+  "Unhandled rejection: 429 Too Many Requests from rate-limiter at gateway.ts:204",
+  "AssertionError: expected checkout total 0 to be greater than 0 (orders.ts:57)",
+];
+
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 /* ==========================================================================
@@ -521,13 +621,40 @@ function fmt(n) {
 function money(n) {
   if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
   if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
-  return '$' + n.toFixed(0);
+  return '$' + Math.floor(n);
 }
-const costOf = u => u.repeatable ? Math.floor(u.cost * Math.pow(u.scale, u.count)) : u.cost;
-
 const $ = id => document.getElementById(id);
-const logEl = $('log');
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
+/* ---- claude code history (feature ships live here, not the event log) ---- */
+const histEl = $('history');
+
+function histPrompt(text) {
+  const empty = histEl.querySelector('.h-empty');
+  if (empty) empty.remove();
+
+  const you = document.createElement('div');
+  you.className = 'h-you';
+  you.innerHTML = '<span class="c">&gt;</span>' + esc(text);
+
+  const res = document.createElement('div');
+  res.className = 'h-res pending';
+  res.textContent = 'working…';
+
+  histEl.append(you, res);
+  while (histEl.children.length > 120) histEl.firstChild.remove();
+  histEl.scrollTop = histEl.scrollHeight;
+  return res;
+}
+function histResolve(el, html) {
+  if (!el) return;
+  el.className = 'h-res';
+  el.innerHTML = html;
+  histEl.scrollTop = histEl.scrollHeight;
+}
+
+/* ---- event log (incidents, purchases, notes) ---- */
+const logEl = $('log');
 function log(msg, cls) {
   const d = document.createElement('div');
   const mm = String(Math.floor(state.elapsed / 60)).padStart(2, '0');
@@ -541,73 +668,116 @@ function log(msg, cls) {
 /* ==========================================================================
    ACTIONS
    ========================================================================== */
-function startCooldown(seconds) {
-  state.cooldown = seconds;
-  state.cooldownFrom = Math.max(0.0001, seconds);
+function startBusy(kind, total, entry) {
+  state.busy = { kind, total: Math.max(0.0001, total), left: Math.max(0.0001, total), entry };
 }
 
-function shipFeature(manual) {
-  if (manual && state.cooldown > 0) return;
-  if (manual) startCooldown(manualCooldown());
+/* Enter is the only verb. What it does depends on the situation. */
+function submitPrompt() {
+  const text = $('prompt').value.trim();
 
+  if (state.busy) return;                              // already working
+
+  if (state.incident) {
+    if (!text) return;
+    if (errorMatches(text, state.incident)) {
+      const entry = histPrompt(text);
+      startBusy('repair', repairTime(), entry);
+    } else {
+      const entry = histPrompt(text || '(nothing)');
+      histResolve(entry, '<span class="bad">Production is on fire. Paste the ' +
+                         'error message above — exactly as written — to fix it.</span>');
+    }
+    $('prompt').value = '';
+    return;
+  }
+
+  const entry = histPrompt(text || pick(FEATURES).toLowerCase());
+  startBusy('build', buildTime(), entry);
+  $('prompt').value = '';
+}
+
+/* Lenient on purpose: the incident code alone is enough, and extra text
+   around a full paste is fine. You still have to actually copy something. */
+function errorMatches(input, inc) {
+  const norm = s => s.toLowerCase().replace(/\s+/g, ' ').trim();
+  const a = norm(input);
+  if (!a) return false;
+  if (a.includes(inc.code.toLowerCase())) return true;
+  return a.includes(norm(inc.msg));
+}
+
+function completeBuild(entry) {
   state.features++;
 
   const room   = Math.max(0, userCap() - state.users);
   const gained = Math.min(usersPerFeature(), room);
-  state.users += gained;
+  state.users += gained;                    // users land only now, on ship
 
-  if (Math.random() >= quality()) state.bugs++;
+  const clean = Math.random() < quality();
+  if (!clean) state.bugs++;
 
-  if (manual) {
-    const tail = gained > 0
-      ? '<span style="color:var(--good)">+' + gained + ' users</span>'
-      : '<span style="color:var(--warn)">at capacity — no new users</span>';
-    log(pick(FEATURES) + ' <span style="color:var(--dimmer)">·</span> ' + tail, 'ship');
-  }
+  const name = pick(FEATURES);
+  const tail = gained > 0
+    ? '<span class="ok">shipped · +' + gained + ' users</span>'
+    : '<span class="warn">shipped · at capacity, no new users</span>';
+  histResolve(entry, name + ' <span style="color:var(--dimmer)">·</span> ' + tail);
+}
+
+function completeFix(entry) {
+  state.bugs = Math.max(0, state.bugs - 1);
+  histResolve(entry, '<span class="ok">Fixed: ' + esc(pick(BUGS)) + '.</span>');
+}
+
+function completeRepair(entry) {
+  const inc = state.incident;
+  state.incident = null;
+  state.bugs = Math.max(0, state.bugs - 1);
+  histResolve(entry, '<span class="ok">Resolved ' + esc(inc ? inc.code : '') +
+                     ' — service restored.</span>');
+  log('Incident ' + esc(inc ? inc.code : '') + ' resolved.', 'fix');
 }
 
 function fixBug() {
-  if (state.cooldown > 0 || state.bugs <= 0) return;
-  startCooldown(manualCooldown());
-  state.bugs--;
-  log('Fixed: ' + pick(BUGS) + '.', 'fix');
+  if (state.busy || state.incident || state.bugs <= 0) return;
+  const entry = histPrompt('fix the top bug in the backlog');
+  startBusy('fix', buildTime(), entry);
 }
 
 function triggerIncident() {
+  if (state.incident) return;               // one fire at a time
+
   state.incidents++;
-  state.bugs = Math.max(0, state.bugs - 1);
+  const code = 'ERR-' + (1000 + Math.floor(Math.random() * 9000));
+  const msg  = pick(ERRORS);
+  state.incident = { msg, code, text: msg + ' [' + code + ']' };
 
   const lo   = Math.min(CONFIG.INCIDENT_MIN_LOSS, CONFIG.INCIDENT_MAX_LOSS);
   const hi   = Math.max(CONFIG.INCIDENT_MIN_LOSS, CONFIG.INCIDENT_MAX_LOSS);
-  const frac = (lo + Math.random() * (hi - lo)) * state.incidentMitigation;
-  const lost = Math.min(state.users, Math.ceil(state.users * frac));
-
-  state.users     -= lost;
+  const lost = Math.min(state.users, Math.ceil(state.users * (lo + Math.random() * (hi - lo))));
+  state.users -= lost;
   state.usersLost += lost;
 
-  log('INCIDENT — ' + pick(BUGS) + '. <span style="color:var(--bad)">−' +
-      fmt(lost) + ' users</span>', 'incident');
+  log('INCIDENT ' + code + ' — <span style="color:var(--bad)">−' + fmt(lost) +
+      ' users</span>, and bleeding until fixed.', 'incident');
 
   document.body.classList.remove('incident');
-  void document.body.offsetWidth;          // restart the CSS animation
+  void document.body.offsetWidth;
   document.body.classList.add('incident');
 
   if (state.incidents === 1) {
-    log('Users churn when things break. Bugs you cannot see still count.', 'note');
+    log('Copy the error and paste it into the prompt. Nothing ships until it is fixed.', 'note');
   }
 }
 
-function buy(u) {
-  if (u.maxed && u.maxed()) return;
-  if (!u.repeatable && u.count > 0) return;
-  const c = costOf(u);
-  if (state.cash < c) return;
-
+function buy(n) {
+  if (!buyable(n)) return;
+  const c = costOf(n);
   state.cash -= c;
-  u.count++;
-  u.apply();
-  log('Bought <b>' + u.name + '</b> for ' + money(c) + '.', 'buy');
-  renderUpgrades();
+  n.count = (n.count || 0) + 1;
+  n.apply();
+  log('Unlocked <b>' + n.name + '</b> for ' + money(c) + '.', 'buy');
+  renderTree();
 }
 
 /* ==========================================================================
@@ -615,21 +785,41 @@ function buy(u) {
    ========================================================================== */
 function tick(dt) {
   state.elapsed += dt;
-
   state.cash += state.users * CONFIG.REVENUE_PER_USER * dt;
 
-  if (state.cooldown > 0) state.cooldown = Math.max(0, state.cooldown - dt);
+  // unresolved incidents bleed users continuously
+  if (state.incident && state.users > 0) {
+    const before = state.users;
+    state.users = Math.max(0, state.users * (1 - bleedRate() * dt));
+    state.usersLost += before - state.users;
+  }
 
+  // whatever the prompt is currently working on
+  if (state.busy) {
+    state.busy.left -= dt;
+    if (state.busy.left <= 0) {
+      const { kind, entry } = state.busy;
+      state.busy = null;
+      if (kind === 'build')  completeBuild(entry);
+      if (kind === 'fix')    completeFix(entry);
+      if (kind === 'repair') completeRepair(entry);
+    }
+  }
+
+  // agents ship on their own, incident or not
   if (state.agents > 0) {
     state.agentTimer += dt * state.agents;
     let guard = 0;
     while (state.agentTimer >= agentInterval() && guard++ < 500) {
       state.agentTimer -= agentInterval();
-      shipFeature(false);
+      state.features++;
+      const room = Math.max(0, userCap() - state.users);
+      state.users += Math.min(usersPerFeature(), room);
+      if (Math.random() >= quality()) state.bugs++;
     }
   }
 
-  if (state.bugs > 0 && state.users > 0) {
+  if (state.bugs > 0 && state.users > 0 && !state.incident) {
     const p = 1 - Math.pow(1 - CONFIG.INCIDENT_CHANCE_PER_BUG, state.bugs * dt);
     if (Math.random() < p) triggerIncident();
   }
@@ -657,87 +847,132 @@ function render() {
                               : state.agents + (state.agents === 1 ? ' agent' : ' agents') +
                                 ' · ' + agentInterval().toFixed(1) + 's';
   $('s-quality').textContent  = Math.round(quality() * 100) + '%';
-  $('s-bugs').textContent     = state.monitoring ? fmt(state.bugs) : '??';
-  $('s-bugsub').textContent   = state.monitoring ? 'visible' : 'no monitoring';
   $('phase').textContent      = phaseName();
   $('f-stats').textContent    = state.incidents + ' incident' + (state.incidents === 1 ? '' : 's') +
                                 ' · ' + fmt(state.usersLost) + ' users lost';
 
-  // cooldown bar + label
-  const cooling = state.cooldown > 0;
-  $('promptrow').classList.toggle('cooling', cooling);
-  $('cdbar').style.width = cooling
-    ? (100 * (1 - state.cooldown / state.cooldownFrom)).toFixed(1) + '%'
-    : '0%';
-  $('cdlabel').textContent = cooling
-    ? 'shipping… ' + state.cooldown.toFixed(1) + 's'
-    : 'cooldown ' + manualCooldown().toFixed(1) + 's';
+  // bug tile stays out of the UI entirely until Monitoring is bought
+  $('tile-bugs').style.display = state.monitoring ? '' : 'none';
+  if (state.monitoring) $('s-bugs').textContent = fmt(state.bugs);
+
+  // prompt row: progress bar, placeholder, labels
+  const busy = state.busy;
+  const row  = $('promptrow');
+  const bar  = $('bar');
+  row.classList.toggle('busy', !!busy);
+  row.classList.toggle('alarm', !!state.incident);
+
+  bar.className = 'bar' + (busy ? ' ' + (busy.kind === 'build' ? '' : busy.kind) : '');
+  bar.style.width = busy ? (100 * (1 - busy.left / busy.total)).toFixed(1) + '%' : '0%';
+
+  const p = $('prompt');
+  if (busy)                p.placeholder = busy.kind === 'repair' ? 'repairing…' : 'building…';
+  else if (state.incident) p.placeholder = 'paste the error message above, then press Enter';
+  else                     p.placeholder = 'add dark mode to the settings page';
+
+  if (busy) {
+    const verb = busy.kind === 'repair' ? 'repairing' : busy.kind === 'fix' ? 'fixing' : 'building';
+    $('statuslabel').textContent = verb + '… ' + busy.left.toFixed(1) + 's';
+  } else if (state.incident) {
+    $('statuslabel').textContent = 'repair ' + repairTime().toFixed(1) + 's';
+  } else {
+    $('statuslabel').textContent = 'build ' + buildTime().toFixed(1) + 's';
+  }
+
+  $('hintlabel').innerHTML = state.incident
+    ? '<span style="color:var(--bad)">Production is down.</span> Nothing ships until it is fixed.'
+    : 'Describe anything and press <kbd>Enter</kbd> to build it.';
+
+  $('h-meta').textContent = state.features > 0 ? fmt(state.features) + ' shipped' : '';
+
+  // incident banner
+  const al = $('alert');
+  if (state.incident) {
+    al.style.display = '';
+    if ($('alert-err').textContent !== state.incident.text) {
+      $('alert-err').textContent = state.incident.text;
+    }
+    $('bleedlabel').textContent = 'losing ' +
+      (bleedRate() * 100).toFixed(1) + '% of users per second';
+  } else {
+    al.style.display = 'none';
+  }
 
   const fb = $('fixbtn');
   fb.style.display = state.monitoring ? '' : 'none';
-  fb.disabled = state.bugs <= 0 || cooling;
+  fb.disabled = !!busy || !!state.incident || state.bugs <= 0;
   fb.textContent = state.bugs > 0 ? 'Fix a bug (' + fmt(state.bugs) + ' open)' : 'No known bugs';
 
-  for (const u of upgrades) {
-    const el = $('up-' + u.id);
+  // per-frame node affordability + live descriptions
+  for (const n of allNodes()) {
+    const el = $('node-' + n.id);
     if (!el) continue;
-    el.classList.toggle('locked', state.cash < costOf(u));
-    el.querySelector('.cost').textContent = money(costOf(u));
-    el.querySelector('.desc').textContent = u.desc();
+    const isSpent = spent(n) || (isMaxed(n) && owned(n));
+    if (!isSpent) {
+      el.classList.toggle('poor', unlocked(n) && state.cash < costOf(n));
+      const c = el.querySelector('.ncost');
+      if (c) c.textContent = money(costOf(n));
+    }
+    const d = el.querySelector('.ndesc');
+    if (d) d.textContent = n.desc();
   }
+
+  const total = allNodes().reduce((s, n) => s + (n.count || 0), 0);
+  $('tree-meta').textContent = total + ' unlocked';
 }
 
-function renderUpgrades() {
-  const box = $('upgrades');
+function renderTree() {
+  const box = $('tree');
   box.innerHTML = '';
-  let shown = 0;
 
-  for (const u of upgrades) {
-    const isMaxed = u.maxed ? u.maxed() : false;
-    const isOwned = !u.repeatable && u.count > 0;
+  for (const b of tree) {
+    const col = document.createElement('div');
+    col.className = 'branch';
+    col.innerHTML = '<div class="bname">' + b.branch + '<i>' + b.note + '</i></div>';
 
-    if (isOwned || (isMaxed && u.count > 0)) {
-      const done = document.createElement('div');
-      done.className = 'up';
-      done.style.cssText = 'opacity:.55;cursor:default';
-      done.innerHTML = '<div class="top"><span class="name">' + u.name + '</span>' +
-        '<span style="color:var(--good);font-size:11px">' +
-        (isMaxed ? 'maxed ×' + u.count : 'owned') + '</span></div>' +
-        (isMaxed ? '<div class="maxed">At the ' + CONFIG.MANUAL_COOLDOWN_MIN +
-                   's floor. Nothing left to squeeze.</div>' : '');
-      box.appendChild(done);
-      shown++;
-      continue;
+    for (const n of b.nodes) {
+      const isSpent  = spent(n);
+      const isMax    = isMaxed(n);
+      const isLocked = !unlocked(n);
+
+      const el = document.createElement(isSpent || isLocked || isMax ? 'div' : 'button');
+      el.id = 'node-' + n.id;
+      el.className = 'node' +
+        (owned(n) ? ' owned linked' : '') +
+        (isLocked ? ' locked' : '') +
+        (isMax && !owned(n) ? ' maxed' : '');
+
+      let right;
+      if (isSpent)        right = 'owned';
+      else if (isMax)     right = owned(n) ? 'maxed ×' + n.count : 'maxed';
+      else                right = money(costOf(n));
+
+      el.innerHTML =
+        '<div class="ntop"><span class="nname">' + n.name + '</span>' +
+        '<span class="ncost">' + right + '</span></div>' +
+        '<div class="ndesc"></div>' +
+        (n.warn && !isSpent ? '<div class="nwarn">' + n.warn + '</div>' : '') +
+        (isLocked ? '<div class="ntag" style="color:var(--dimmer)">needs ' +
+                    nodeById(n.req).name + '</div>' : '') +
+        (n.repeat && n.count ? '<div class="ntag">owned ×' + n.count + '</div>' : '');
+
+      el.querySelector('.ndesc').textContent = n.desc();
+      if (!isSpent && !isLocked && !isMax) el.onclick = () => buy(n);
+      col.appendChild(el);
     }
-    if (isMaxed || !u.unlock()) continue;
-
-    const b = document.createElement('button');
-    b.className = 'up';
-    b.id = 'up-' + u.id;
-    b.innerHTML =
-      '<div class="top"><span class="name">' + u.name + '</span>' +
-      '<span class="cost">' + money(costOf(u)) + '</span></div>' +
-      '<div class="desc"></div>' +
-      (u.warn ? '<div class="cost-warn">' + u.warn + '</div>' : '') +
-      (u.repeatable && u.count > 0 ? '<div class="owned">owned ×' + u.count + '</div>' : '');
-    b.querySelector('.desc').textContent = u.desc();
-    b.onclick = () => buy(u);
-    box.appendChild(b);
-    shown++;
-  }
-
-  if (shown === 0) {
-    box.innerHTML = '<div style="padding:14px;color:var(--dimmer);font-size:11px">' +
-                    'Ship a feature first.</div>';
+    box.appendChild(col);
   }
 }
 
 /* ==========================================================================
-   TUNING PANEL — writes straight into CONFIG; everything reads it live
+   TUNING PANEL
    ========================================================================== */
 function renderTuning() {
   const box = $('tuning');
   box.innerHTML = '';
+
+  const grid = document.createElement('div');
+  grid.className = 'tunegrid';
 
   for (const t of TUNABLES) {
     const row = document.createElement('div');
@@ -758,23 +993,23 @@ function renderTuning() {
     inp.addEventListener('input', () => {
       const v = parseFloat(inp.value);
       if (!Number.isFinite(v)) { inp.classList.add('invalid'); return; }
-      let clamped = v;
-      if (t.min !== undefined) clamped = Math.max(t.min, clamped);
-      if (t.max !== undefined) clamped = Math.min(t.max, clamped);
-      inp.classList.toggle('invalid', clamped !== v);
-      CONFIG[t.key] = clamped;
-      renderUpgrades();
+      let c = v;
+      if (t.min !== undefined) c = Math.max(t.min, c);
+      if (t.max !== undefined) c = Math.min(t.max, c);
+      inp.classList.toggle('invalid', c !== v);
+      CONFIG[t.key] = c;
+      renderTree();
     });
 
     row.append(lab, inp);
-    box.appendChild(row);
+    grid.appendChild(row);
   }
 
   const note = document.createElement('div');
   note.className = 'tunenote';
-  note.textContent = 'Every value applies immediately — no reset needed. ' +
-                     'Upgrades store multipliers, not fixed numbers, so changing ' +
-                     'a base value re-derives everything you have already bought.';
+  note.textContent = 'Every value applies immediately — no reset needed. Skills store ' +
+    'multipliers rather than fixed numbers, so changing a base value re-derives ' +
+    'everything already unlocked. Reset restarts the run but keeps your tuning.';
 
   const acts = document.createElement('div');
   acts.className = 'actions';
@@ -782,13 +1017,12 @@ function renderTuning() {
   rst.textContent = 'Restore defaults';
   rst.onclick = () => {
     Object.assign(CONFIG, DEFAULTS);
-    renderTuning();
-    renderUpgrades();
+    renderTuning(); renderTree();
     log('Tuning restored to defaults.', 'note');
   };
   acts.appendChild(rst);
 
-  box.append(note, acts);
+  box.append(grid, note, acts);
 }
 
 /* ==========================================================================
@@ -799,14 +1033,41 @@ const promptEl = $('prompt');
 promptEl.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   e.preventDefault();
-  shipFeature(true);
-  promptEl.value = '';
+  submitPrompt();
 });
 
 $('fixbtn').onclick = () => { fixBug(); promptEl.focus(); };
 
-/* Two-step reset. `confirm()` is auto-dismissed in some embedded browsers,
-   which silently swallowed the whole handler — so the confirmation is inline. */
+/* Copy button, with a fallback for browsers that block the async clipboard
+   on file:// origins. */
+$('copybtn').onclick = async () => {
+  if (!state.incident) return;
+  const text = state.incident.text;
+  const done = () => {
+    $('copybtn').textContent = 'Copied — now paste it';
+    setTimeout(() => { if ($('copybtn')) $('copybtn').textContent = 'Copy error'; }, 1600);
+  };
+  try {
+    await navigator.clipboard.writeText(text);
+    done();
+  } catch (err) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    if (ok) done();
+    else {
+      $('copybtn').textContent = 'Select the text and copy it';
+      setTimeout(() => { if ($('copybtn')) $('copybtn').textContent = 'Copy error'; }, 2200);
+    }
+  }
+  promptEl.focus();
+};
+
+/* Two-step reset — confirm() is auto-dismissed in some embedded browsers. */
 const resetBtn = $('reset');
 let resetArmed = false, resetTimer = null;
 
@@ -827,28 +1088,28 @@ resetBtn.onclick = () => {
   }
   disarmReset();
   state = freshState();
-  upgrades = makeUpgrades();
+  tree = makeTree();
   logEl.innerHTML = '';
+  histEl.innerHTML = '<div class="h-empty">No history yet. Describe a feature and press Enter.</div>';
   lastKey = '';
-  renderUpgrades();
-  render();
+  renderTree(); render();
   log('Fresh repo. Good luck.', 'note');
   promptEl.focus();
 };
 
-// rebuild the shop only when the visible set actually changes
+// rebuild the tree only when the visible shape actually changes
 let lastKey = '';
 function unlockWatch() {
   let key = '';
-  for (const u of upgrades) {
-    key += (u.unlock() ? 1 : 0) + (u.maxed && u.maxed() ? 'm' : '') + ':' + u.count + ',';
+  for (const n of allNodes()) {
+    key += (n.count || 0) + (unlocked(n) ? 'u' : '') + (isMaxed(n) ? 'm' : '') + ',';
   }
-  if (key !== lastKey) { lastKey = key; renderUpgrades(); }
+  if (key !== lastKey) { lastKey = key; renderTree(); }
 }
 
 let last = performance.now();
 function frame(now) {
-  const dt = Math.min(0.25, (now - last) / 1000);   // clamp for tab-switches
+  const dt = Math.min(0.25, (now - last) / 1000);
   last = now;
   tick(dt);
   unlockWatch();
@@ -857,7 +1118,7 @@ function frame(now) {
 }
 
 renderTuning();
-renderUpgrades();
+renderTree();
 render();
 log('You have an app. It has no users. Ship something.', 'note');
 promptEl.focus();
