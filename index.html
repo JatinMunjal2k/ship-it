@@ -26,19 +26,19 @@
     background: var(--bg);
     color: var(--text);
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 13px; line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 
   body.incident::after {
-    content: "";
-    position: fixed; inset: 0;
-    background: var(--bad);
-    opacity: 0.16;
-    pointer-events: none;
-    animation: flash 0.5s ease-out forwards;
-    z-index: 100;
+    content: ""; position: fixed; inset: 0;
+    background: var(--bad); opacity: 0.16;
+    pointer-events: none; animation: flash 0.5s ease-out forwards; z-index: 100;
+  }
+  body.oops::after {
+    content: ""; position: fixed; inset: 0;
+    background: var(--warn); opacity: 0.14;
+    pointer-events: none; animation: flash 0.6s ease-out forwards; z-index: 100;
   }
   @keyframes flash { to { opacity: 0; } }
 
@@ -52,13 +52,12 @@
   h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: -0.2px; }
   h1 span { color: var(--accent); }
   .phase {
-    margin-left: auto;
-    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    margin-left: auto; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
     color: var(--accent); border: 1px solid var(--accent);
     padding: 2px 8px; border-radius: 3px;
   }
 
-  /* ---------- stats (flex so hidden tiles reflow) ---------- */
+  /* ---------- stats ---------- */
   .stats {
     display: flex; gap: 1px; background: var(--border);
     border: 1px solid var(--border); border-radius: 6px;
@@ -92,10 +91,8 @@
   }
   .panel h2 .meta { color: var(--dim); text-transform: none; letter-spacing: 0; }
 
-  /* ---------- claude code: history + prompt ---------- */
-  #history {
-    height: 230px; overflow-y: auto; padding: 10px 12px; font-size: 12px;
-  }
+  /* ---------- history ---------- */
+  #history { height: 200px; overflow-y: auto; padding: 10px 12px; font-size: 12px; }
   #history .h-you { color: var(--text); padding-top: 6px; }
   #history .h-you .c { color: var(--accent); font-weight: 700; margin-right: 6px; }
   #history .h-res { color: var(--dim); padding-left: 16px; }
@@ -105,23 +102,74 @@
   #history .h-res.pending { color: var(--dimmer); }
   #history .h-empty { color: var(--dimmer); }
 
+  /* ---------- pipeline stage card ---------- */
+  #stage { margin: 0 14px 12px; }
+  .card {
+    border: 1px solid var(--border); border-radius: 5px;
+    background: var(--panel-2); padding: 10px 12px; position: relative; overflow: hidden;
+  }
+  .card.wait   { border-color: var(--border); }
+  .card.ask    { border-color: var(--warn);   background: rgba(232,179,57,0.06); }
+  .card.diff   { border-color: var(--accent); background: rgba(217,119,87,0.05); }
+  .card.fail   { border-color: var(--bad);    background: rgba(229,72,77,0.06); }
+  .card.ready  { border-color: var(--good);   background: rgba(111,207,127,0.06); }
+
+  .card .cbar {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+    background: var(--accent); opacity: 0.12; pointer-events: none;
+    transition: width 0.06s linear;
+  }
+  .card .chead {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px;
+    margin-bottom: 6px; position: relative;
+  }
+  .card.wait  .chead { color: var(--dim);   }
+  .card.ask   .chead { color: var(--warn);  }
+  .card.diff  .chead { color: var(--accent);}
+  .card.fail  .chead { color: var(--bad);   }
+  .card.ready .chead { color: var(--good);  }
+
+  .card .cbody { position: relative; font-size: 12px; color: var(--text); }
+  .card .csub  { position: relative; font-size: 11px; color: var(--dim); margin-top: 3px; }
+  .card .crisk { position: relative; font-size: 11px; color: var(--bad); margin-top: 5px; }
+  .card .cmd {
+    position: relative; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 7px 9px; margin: 2px 0 0;
+    font-size: 12px; color: var(--text); word-break: break-all;
+  }
+  .card .cmd.danger { border-color: var(--bad); color: var(--bad); }
+  .card .crow { position: relative; display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+
+  .btn {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 6px 11px; font: inherit; font-size: 12px; cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .btn:hover:not(:disabled) { background: #26262b; border-color: #3a3a42; }
+  .btn:disabled { opacity: 0.35; cursor: default; }
+  .btn kbd {
+    font: inherit; font-size: 10px; color: var(--dimmer);
+    border: 1px solid var(--border); border-radius: 3px;
+    padding: 0 4px; margin-left: 6px;
+  }
+  .btn.pri { border-color: var(--accent); color: var(--accent); }
+  .btn.pri:hover:not(:disabled) { background: rgba(217,119,87,0.1); }
+  .btn.ok  { border-color: var(--good); color: var(--good); }
+  .btn.ok:hover:not(:disabled)  { background: rgba(111,207,127,0.1); }
+  .btn.no  { color: var(--dim); }
+
+  /* ---------- prompt ---------- */
   .promptbox { padding: 12px 14px 14px; border-top: 1px solid var(--border); }
   .promptrow {
     position: relative; overflow: hidden;
     display: flex; align-items: center; gap: 8px;
     background: var(--bg); border: 1px solid var(--border);
-    border-radius: 5px; padding: 10px 12px; transition: border-color 0.15s;
+    border-radius: 5px; padding: 10px 12px; transition: border-color 0.15s, opacity 0.15s;
   }
   .promptrow:focus-within { border-color: var(--accent); }
-  .promptrow.busy .chev { color: var(--dimmer); }
   .promptrow.alarm { border-color: var(--bad); }
-  .bar {
-    position: absolute; left: 0; top: 0; bottom: 0;
-    width: 0%; pointer-events: none; opacity: 0.14;
-    background: var(--accent); transition: width 0.06s linear;
-  }
-  .bar.fix    { background: var(--good); }
-  .bar.repair { background: var(--bad); }
+  .promptrow.idle  { opacity: 0.5; }
   .chev { color: var(--accent); font-weight: 700; position: relative; }
   #prompt {
     flex: 1; background: none; border: none; outline: none;
@@ -137,18 +185,7 @@
     border-radius: 3px; padding: 1px 5px; font: inherit; font-size: 10px; color: var(--dim);
   }
   #statuslabel { color: var(--dim); white-space: nowrap; }
-
   .actions { display: flex; gap: 8px; margin-top: 10px; }
-  .actions button, .btn {
-    background: var(--panel-2); color: var(--text);
-    border: 1px solid var(--border); border-radius: 4px;
-    padding: 7px 12px; font: inherit; font-size: 12px; cursor: pointer;
-    transition: background 0.12s, border-color 0.12s;
-  }
-  .actions button:hover:not(:disabled), .btn:hover:not(:disabled) {
-    background: #26262b; border-color: #3a3a42;
-  }
-  .actions button:disabled { opacity: 0.35; cursor: default; }
 
   /* ---------- incident alert ---------- */
   #alert {
@@ -170,20 +207,21 @@
 
   /* ---------- event log ---------- */
   #log {
-    height: 306px; overflow-y: auto; padding: 10px 12px; font-size: 12px;
+    height: 420px; overflow-y: auto; padding: 10px 12px; font-size: 12px;
     display: flex; flex-direction: column-reverse;
   }
   #log div { padding: 2px 0; color: var(--dim); word-break: break-word; }
   #log .t { color: var(--dimmer); margin-right: 8px; font-size: 11px; }
   #log .incident { color: var(--bad); font-weight: 600; }
+  #log .oops     { color: var(--warn); font-weight: 600; }
   #log .buy      { color: var(--accent); }
   #log .fix      { color: var(--good); }
   #log .note     { color: var(--warn); }
 
   /* ---------- skill tree ---------- */
-  .tree { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 14px; }
-  @media (max-width: 1000px) { .tree { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 560px)  { .tree { grid-template-columns: 1fr; } }
+  .tree { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 20px; padding: 14px; }
+  @media (max-width: 900px) { .tree { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .tree { grid-template-columns: 1fr; } }
 
   .branch { min-width: 0; }
   .branch .bname {
@@ -200,11 +238,10 @@
     font: inherit; cursor: pointer;
     transition: background 0.12s, border-color 0.12s, opacity 0.12s;
   }
-  .node + .node { margin-top: 20px; }
-  /* connector between consecutive nodes in a branch */
+  .node + .node { margin-top: 18px; }
   .node + .node::before {
-    content: ''; position: absolute; left: 50%; top: -20px;
-    width: 1px; height: 20px; background: var(--border);
+    content: ''; position: absolute; left: 50%; top: -18px;
+    width: 1px; height: 18px; background: var(--border);
   }
   .node + .node.linked::before { background: var(--accent); opacity: 0.55; }
 
@@ -233,13 +270,10 @@
   #tuning { padding: 12px 14px; }
   .tunegrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 20px; }
   @media (max-width: 760px) { .tunegrid { grid-template-columns: 1fr; } }
-  .tune {
-    display: flex; align-items: center; gap: 8px;
-    padding: 4px 0; border-bottom: 1px solid #202026;
-  }
+  .tune { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid #202026; }
   .tune label { flex: 1; font-size: 11px; color: var(--dim); }
   .tune input {
-    width: 76px; background: var(--bg); color: var(--text);
+    width: 74px; background: var(--bg); color: var(--text);
     border: 1px solid var(--border); border-radius: 4px;
     padding: 3px 6px; font: inherit; font-size: 11px; text-align: right;
   }
@@ -298,7 +332,7 @@
     <div class="stat" id="tile-bugs" style="display:none">
       <div class="label">Open Bugs</div>
       <div class="value bad" id="s-bugs">0</div>
-      <div class="sub" id="s-bugsub">visible</div>
+      <div class="sub">visible</div>
     </div>
   </div>
 
@@ -307,6 +341,8 @@
       <h2>claude code <span class="meta" id="h-meta"></span></h2>
 
       <div id="history"><div class="h-empty">No history yet. Describe a feature and press Enter.</div></div>
+
+      <div id="stage"></div>
 
       <div id="alert" style="display:none">
         <div class="ahead">Production incident — paste the error into the prompt to fix it</div>
@@ -319,17 +355,16 @@
 
       <div class="promptbox">
         <div class="promptrow" id="promptrow">
-          <div class="bar" id="bar"></div>
           <span class="chev">&gt;</span>
           <input id="prompt" autocomplete="off" spellcheck="false"
                  placeholder="add dark mode to the settings page">
         </div>
         <div class="hint">
           <span id="hintlabel">Describe anything and press <kbd>Enter</kbd> to build it.</span>
-          <span id="statuslabel">build 5.0s</span>
+          <span id="statuslabel"></span>
         </div>
         <div class="actions">
-          <button id="fixbtn" style="display:none">Fix a bug</button>
+          <button class="btn" id="fixbtn" style="display:none">Fix a bug</button>
         </div>
       </div>
     </div>
@@ -361,121 +396,152 @@
 "use strict";
 
 /* ==========================================================================
-   CONFIG — every value is editable live from the tuning panel.
-   Nothing is read once at boot: the derived getters below recompute from
-   CONFIG each frame, so edits apply immediately even to owned skills.
+   CONFIG — all editable live from the tuning panel.
    ========================================================================== */
 const CONFIG = {
-  USERS_PER_FEATURE_MIN:   6,      // a shipped feature attracts a random count
-  USERS_PER_FEATURE_MAX:  18,      // of users in this inclusive range
+  USERS_PER_FEATURE_MIN:   6,
+  USERS_PER_FEATURE_MAX:  18,
+  REVENUE_PER_USER:        0.015,
+  BASE_QUALITY:            0.50,
+  BASE_USER_CAP:         250,
 
-  REVENUE_PER_USER:        0.015,  // $ per user per second
-  BASE_QUALITY:            0.50,   // chance a shipped feature is bug-free
-  BASE_USER_CAP:         250,      // capacity before you buy servers
+  THINK_TIME_START:        2.5,    // Claude writing the diff
+  THINK_TIME_MIN:          0.1,
+  TEST_TIME:               1.2,    // test suite run
+  AUTOFIX_TIME:            2.0,    // repairing a red build
 
-  BUILD_TIME_START:        5.0,    // seconds a manual feature takes to build
-  BUILD_TIME_MIN:          0.1,    // floor — skills can never go below this
-  REPAIR_TIME_START:       5.0,    // seconds to repair a pasted error
-  REPAIR_TIME_MIN:         0.5,    // floor for repairs
+  RISKY_DIFF_CHANCE:       0.25,   // share of diffs flagged risky
+  RISKY_QUALITY_MULT:      0.35,   // × quality when you ship a risky diff
 
-  AGENT_INTERVAL:          6.0,    // seconds between each agent's auto-ship
+  PERMISSION_CHANCE:       0.45,   // chance a build asks permission
+  DANGEROUS_SHARE:         0.18,   // share of those that are genuinely destructive
+  DANGEROUS_USER_LOSS:     0.30,   // users lost if you approve a destructive one
 
-  INCIDENT_CHANCE_PER_BUG: 0.004,  // per bug, per second
-  INCIDENT_MIN_LOSS:       0.04,   // instant churn when it fires, low end
-  INCIDENT_MAX_LOSS:       0.12,   // ...high end
-  INCIDENT_BLEED:          0.025,  // extra fraction of users lost per second
-                                   // for as long as the incident is unresolved
+  AGENT_INTERVAL:          6.0,
+  REPAIR_TIME_START:       5.0,
+  REPAIR_TIME_MIN:         0.5,
+
+  INCIDENT_CHANCE_PER_BUG: 0.004,
+  INCIDENT_MIN_LOSS:       0.04,
+  INCIDENT_MAX_LOSS:       0.12,
+  INCIDENT_BLEED:          0.025,
 };
 
 const DEFAULTS = Object.assign({}, CONFIG);
 
 const TUNABLES = [
-  { key: 'USERS_PER_FEATURE_MIN',   label: 'Users / feature — min',   step: 1,     min: 0 },
-  { key: 'USERS_PER_FEATURE_MAX',   label: 'Users / feature — max',   step: 1,     min: 0 },
-  { key: 'REVENUE_PER_USER',        label: '$ per user / sec',        step: 0.005, min: 0 },
-  { key: 'BASE_QUALITY',            label: 'Base code quality',       step: 0.05,  min: 0, max: 1 },
-  { key: 'BASE_USER_CAP',           label: 'Base user cap',           step: 50,    min: 1 },
-  { key: 'BUILD_TIME_START',        label: 'Build time (s)',          step: 0.5,   min: 0 },
-  { key: 'BUILD_TIME_MIN',          label: 'Min build time (s)',      step: 0.1,   min: 0 },
-  { key: 'REPAIR_TIME_START',       label: 'Repair time (s)',         step: 0.5,   min: 0 },
-  { key: 'REPAIR_TIME_MIN',         label: 'Min repair time (s)',     step: 0.1,   min: 0 },
-  { key: 'AGENT_INTERVAL',          label: 'Agent interval (s)',      step: 0.5,   min: 0.1 },
-  { key: 'INCIDENT_CHANCE_PER_BUG', label: 'Incident chance /bug /s', step: 0.001, min: 0, max: 1 },
-  { key: 'INCIDENT_MIN_LOSS',       label: 'Incident churn — min',    step: 0.01,  min: 0, max: 1 },
-  { key: 'INCIDENT_MAX_LOSS',       label: 'Incident churn — max',    step: 0.01,  min: 0, max: 1 },
-  { key: 'INCIDENT_BLEED',          label: 'Churn /sec unresolved',   step: 0.005, min: 0, max: 1 },
+  { key:'USERS_PER_FEATURE_MIN',   label:'Users / feature — min',   step:1,     min:0 },
+  { key:'USERS_PER_FEATURE_MAX',   label:'Users / feature — max',   step:1,     min:0 },
+  { key:'REVENUE_PER_USER',        label:'$ per user / sec',        step:0.005, min:0 },
+  { key:'BASE_QUALITY',            label:'Base code quality',       step:0.05,  min:0, max:1 },
+  { key:'BASE_USER_CAP',           label:'Base user cap',           step:50,    min:1 },
+  { key:'THINK_TIME_START',        label:'Think time (s)',          step:0.5,   min:0 },
+  { key:'THINK_TIME_MIN',          label:'Min think time (s)',      step:0.1,   min:0 },
+  { key:'TEST_TIME',               label:'Test run (s)',            step:0.2,   min:0 },
+  { key:'AUTOFIX_TIME',            label:'Autofix (s)',             step:0.2,   min:0 },
+  { key:'RISKY_DIFF_CHANCE',       label:'Risky diff chance',       step:0.05,  min:0, max:1 },
+  { key:'RISKY_QUALITY_MULT',      label:'Risky × quality',         step:0.05,  min:0, max:1 },
+  { key:'PERMISSION_CHANCE',       label:'Permission ask chance',   step:0.05,  min:0, max:1 },
+  { key:'DANGEROUS_SHARE',         label:'…of those, destructive',  step:0.02,  min:0, max:1 },
+  { key:'DANGEROUS_USER_LOSS',     label:'Destructive user loss',   step:0.05,  min:0, max:1 },
+  { key:'AGENT_INTERVAL',          label:'Agent interval (s)',      step:0.5,   min:0.1 },
+  { key:'REPAIR_TIME_START',       label:'Repair time (s)',         step:0.5,   min:0 },
+  { key:'REPAIR_TIME_MIN',         label:'Min repair time (s)',     step:0.1,   min:0 },
+  { key:'INCIDENT_CHANCE_PER_BUG', label:'Incident chance /bug /s', step:0.001, min:0, max:1 },
+  { key:'INCIDENT_MIN_LOSS',       label:'Incident churn — min',    step:0.01,  min:0, max:1 },
+  { key:'INCIDENT_MAX_LOSS',       label:'Incident churn — max',    step:0.01,  min:0, max:1 },
+  { key:'INCIDENT_BLEED',          label:'Churn /sec unresolved',   step:0.005, min:0, max:1 },
 ];
 
 /* ==========================================================================
-   STATE — skills store *modifiers*, never absolute values.
+   STATE
    ========================================================================== */
 function freshState() {
   return {
     users: 0, cash: 0, features: 0, bugs: 0,
 
-    qualityBonus:       0,     // + to BASE_QUALITY
-    capBonus:           0,     // + to BASE_USER_CAP
-    buildMult:          1,     // × BUILD_TIME_START
-    buildFlat:          0,     // flat seconds added after the floor
-    repairMult:         1,     // × REPAIR_TIME_START
-    agentIntervalMult:  1,     // × AGENT_INTERVAL
-    bleedMult:          1,     // × INCIDENT_BLEED
-    agents:             0,
-    monitoring:      false,
+    qualityBonus: 0, capBonus: 0,
+    buildMult: 1, buildFlat: 0, repairMult: 1,
+    agentIntervalMult: 1, bleedMult: 1,
+    agents: 0, monitoring: false,
+
+    autoAccept: false,   // skips the review stage
+    allowlist:  false,   // safe permission asks auto-approved
+    skipPerms:  false,   // every ask auto-approved, destructive included
+    ci:         false,   // tests auto-run and auto-fix, no decision
+    cd:         false,   // deploy happens on its own
 
     agentTimer: 0,
-    busy: null,                // { kind:'build'|'fix'|'repair', total, left, entry }
-    incident: null,            // { msg, code, text }
+    build: null,         // the pipeline — see startBuild()
+    stashed: null,       // feature work parked while an incident is live
+    incident: null,
 
-    incidents: 0, usersLost: 0, elapsed: 0,
+    incidents: 0, usersLost: 0, disasters: 0, elapsed: 0,
   };
 }
 let state = freshState();
 
-/* ---- derived values, recomputed every frame ---- */
+/* ---- derived ---- */
 const quality       = () => Math.max(0, Math.min(0.99, CONFIG.BASE_QUALITY + state.qualityBonus));
 const userCap       = () => Math.max(1, CONFIG.BASE_USER_CAP + state.capBonus);
 const agentInterval = () => Math.max(0.05, CONFIG.AGENT_INTERVAL * state.agentIntervalMult);
-const buildTime     = () => Math.max(CONFIG.BUILD_TIME_MIN, CONFIG.BUILD_TIME_START * state.buildMult)
+const thinkTime     = () => Math.max(CONFIG.THINK_TIME_MIN, CONFIG.THINK_TIME_START * state.buildMult)
                             + state.buildFlat;
+const testTime      = () => Math.max(0.1, CONFIG.TEST_TIME    * state.buildMult);
+const autofixTime   = () => Math.max(0.1, CONFIG.AUTOFIX_TIME * state.buildMult);
 const repairTime    = () => Math.max(CONFIG.REPAIR_TIME_MIN, CONFIG.REPAIR_TIME_START * state.repairMult);
 const bleedRate     = () => Math.max(0, CONFIG.INCIDENT_BLEED * state.bleedMult);
 
-const atBuildFloor  = () => CONFIG.BUILD_TIME_START  * state.buildMult  <= CONFIG.BUILD_TIME_MIN  + 1e-9;
+const atThinkFloor  = () => CONFIG.THINK_TIME_START  * state.buildMult  <= CONFIG.THINK_TIME_MIN  + 1e-9;
 const atRepairFloor = () => CONFIG.REPAIR_TIME_START * state.repairMult <= CONFIG.REPAIR_TIME_MIN + 1e-9;
 
 function usersPerFeature() {
-  const a = Math.floor(CONFIG.USERS_PER_FEATURE_MIN);
-  const b = Math.floor(CONFIG.USERS_PER_FEATURE_MAX);
+  const a = Math.floor(CONFIG.USERS_PER_FEATURE_MIN), b = Math.floor(CONFIG.USERS_PER_FEATURE_MAX);
   const lo = Math.max(0, Math.min(a, b)), hi = Math.max(0, Math.max(a, b));
   return lo + Math.floor(Math.random() * (hi - lo + 1));
 }
 
 /* ==========================================================================
    SKILL TREE
-   Each node may declare `req` (id of its prerequisite). A node is locked
-   until its prerequisite is owned. `pct` helpers keep quality text honest.
    ========================================================================== */
-const pts = n => (n * 100).toFixed(0);
-
 function makeTree() { return [
 
-  { branch: 'Velocity', note: 'build time', nodes: [
-    { id:'v1', name:'Touch typing', cost:25,
-      desc:()=>'Build time ×0.80.',
-      apply:()=>{ state.buildMult *= 0.80; }, maxed:atBuildFloor },
-    { id:'v2', name:'Prompt snippets', cost:180, req:'v1',
-      desc:()=>'Build time ×0.80.',
-      apply:()=>{ state.buildMult *= 0.80; }, maxed:atBuildFloor },
-    { id:'v3', name:'Parallel subagents', cost:900, req:'v2',
-      desc:()=>'Build time ×0.75.',
-      apply:()=>{ state.buildMult *= 0.75; }, maxed:atBuildFloor },
-    { id:'v4', name:'Context compaction', cost:3000, scale:1.6, repeat:true, req:'v3',
-      desc:()=>'Build time ×0.90. Now '+buildTime().toFixed(2)+'s.',
-      apply:()=>{ state.buildMult *= 0.90; }, maxed:atBuildFloor },
+  { branch:'Workflow', note:'deletes chores', nodes:[
+    { id:'w1', name:'Auto-accept edits', cost:250,
+      desc:()=>'No more approving diffs — including the risky ones.',
+      warn:'You stop screening. Risky diffs ship themselves.',
+      apply:()=>{ state.autoAccept = true; } },
+    { id:'w2', name:'Command allowlist', cost:600, req:'w1',
+      desc:()=>'Safe commands stop asking. Destructive ones still do.',
+      apply:()=>{ state.allowlist = true; } },
+    { id:'w3', name:'Continuous integration', cost:1400, req:'w2',
+      desc:()=>'Tests run and repair themselves. No red-build decision.',
+      apply:()=>{ state.ci = true; } },
+    { id:'w4', name:'Continuous delivery', cost:3000, req:'w3',
+      desc:()=>'Green builds deploy on their own.',
+      apply:()=>{ state.cd = true; } },
+    { id:'w5', name:'Skip permissions', cost:9000, req:'w4',
+      desc:()=>'Nothing ever asks again. Nothing.',
+      warn:'Destructive commands run unattended. You will find out later.',
+      apply:()=>{ state.skipPerms = true; } },
   ]},
 
-  { branch: 'Capacity', note: 'user ceiling', nodes: [
+  { branch:'Velocity', note:'think time', nodes:[
+    { id:'v1', name:'Touch typing', cost:25,
+      desc:()=>'Build stages ×0.80.',
+      apply:()=>{ state.buildMult *= 0.80; }, maxed:atThinkFloor },
+    { id:'v2', name:'Prompt snippets', cost:180, req:'v1',
+      desc:()=>'Build stages ×0.80.',
+      apply:()=>{ state.buildMult *= 0.80; }, maxed:atThinkFloor },
+    { id:'v3', name:'Parallel subagents', cost:900, req:'v2',
+      desc:()=>'Build stages ×0.75.',
+      apply:()=>{ state.buildMult *= 0.75; }, maxed:atThinkFloor },
+    { id:'v4', name:'Context compaction', cost:3000, scale:1.6, repeat:true, req:'v3',
+      desc:()=>'Build stages ×0.90. Think is now '+thinkTime().toFixed(2)+'s.',
+      apply:()=>{ state.buildMult *= 0.90; }, maxed:atThinkFloor },
+  ]},
+
+  { branch:'Capacity', note:'user ceiling', nodes:[
     { id:'c1', name:'Bigger box', cost:60, scale:1.7, repeat:true,
       desc:()=>'+400 user capacity.',
       apply:()=>{ state.capBonus += 400; } },
@@ -490,7 +556,7 @@ function makeTree() { return [
       apply:()=>{ state.capBonus += 30000; } },
   ]},
 
-  { branch: 'Quality', note: 'clean-ship rate', nodes: [
+  { branch:'Quality', note:'clean-ship rate', nodes:[
     { id:'q1', name:'Linter', cost:40,
       desc:()=>'Quality +4 points.',
       apply:()=>{ state.qualityBonus += 0.04; } },
@@ -508,16 +574,13 @@ function makeTree() { return [
       warn:'Adds +0.6s to every build, under the floor.',
       apply:()=>{ state.qualityBonus += 0.09; state.buildFlat += 0.6;
                   state.agentIntervalMult *= 1.35; } },
-    { id:'q6', name:'CI/CD pipeline', cost:3000, req:'q4',
-      desc:()=>'Quality +5 points. Agents 20% faster.',
-      apply:()=>{ state.qualityBonus += 0.05; state.agentIntervalMult *= 0.80; } },
-    { id:'q7', name:'Fuzz testing', cost:6500, scale:1.55, repeat:true, req:'q6',
-      desc:()=>'Quality +2 points. Now '+pts(quality())+'%.',
+    { id:'q6', name:'Fuzz testing', cost:6500, scale:1.55, repeat:true, req:'q5',
+      desc:()=>'Quality +2 points. Now '+(quality()*100).toFixed(0)+'%.',
       apply:()=>{ state.qualityBonus += 0.02; },
-      maxed:()=>quality() >= 0.99 - 1e-9 },
+      maxed:()=>quality() >= 0.99 - 1e-9 } ,
   ]},
 
-  { branch: 'Automation', note: 'ships itself', nodes: [
+  { branch:'Automation', note:'ships itself', nodes:[
     { id:'a1', name:'Background agent', cost:150, scale:1.6, repeat:true,
       desc:()=>'One more agent shipping every '+agentInterval().toFixed(1)+'s.',
       apply:()=>{ state.agents += 1; } },
@@ -525,14 +588,14 @@ function makeTree() { return [
       desc:()=>'All agents ship 20% faster.',
       apply:()=>{ state.agentIntervalMult *= 0.80; } },
     { id:'a3', name:'Orchestrator', cost:5500, req:'a2',
-      desc:()=>'+3 agents, hired all at once.',
+      desc:()=>'+3 agents, hired at once.',
       apply:()=>{ state.agents += 3; } },
     { id:'a4', name:'Self-improving loop', cost:18000, scale:1.7, repeat:true, req:'a3',
-      desc:()=>'+5 agents. They are writing their own prompts now.',
+      desc:()=>'+5 agents. They write their own prompts now.',
       apply:()=>{ state.agents += 5; } },
   ]},
 
-  { branch: 'Reliability', note: 'incidents', nodes: [
+  { branch:'Reliability', note:'incidents', nodes:[
     { id:'r1', name:'Monitoring', cost:400,
       desc:()=>'Reveals your open bug count. Unlocks manual bug fixing.',
       apply:()=>{ state.monitoring = true; } },
@@ -543,7 +606,7 @@ function makeTree() { return [
       desc:()=>'Repair time ×0.65. Now '+repairTime().toFixed(2)+'s.',
       apply:()=>{ state.repairMult *= 0.65; }, maxed:atRepairFloor },
     { id:'r4', name:'On-call rotation', cost:6000, req:'r2',
-      desc:()=>'Churn while broken ×0.50. Someone is always awake.',
+      desc:()=>'Churn while broken ×0.50.',
       apply:()=>{ state.bleedMult *= 0.50; } },
     { id:'r5', name:'Auto-remediation', cost:12000, scale:1.6, repeat:true, req:'r3',
       desc:()=>'Repair time ×0.85.',
@@ -555,8 +618,6 @@ let tree = makeTree();
 
 const allNodes = () => tree.flatMap(b => b.nodes);
 const nodeById = id => allNodes().find(n => n.id === id);
-
-/* node predicates */
 const owned    = n => (n.count || 0) > 0;
 const isMaxed  = n => !!(n.maxed && n.maxed());
 const unlocked = n => !n.req || owned(nodeById(n.req));
@@ -575,11 +636,44 @@ const FEATURES = [
   "Split the monolith", "Merged the microservices back",
   "Introduced a feature flag", "Removed the feature flag",
   "Made the button 2px rounder", "Added infinite scroll",
-  "Cached everything", "Invalidated the cache",
-  "Added an onboarding flow", "Shipped straight to prod on a Friday",
+  "Cached everything", "Invalidated the cache", "Added an onboarding flow",
   "Renamed `data` to `payload`", "Added a loading spinner",
   "Upgraded the design system", "Wrote a migration script",
   "Added keyboard shortcuts", "Localized into three languages",
+];
+
+const FILES = [
+  "src/checkout/cart.tsx", "src/auth/session.ts", "src/api/gateway.ts",
+  "src/components/Button.tsx", "src/db/migrations/0042_users.sql",
+  "src/hooks/useUser.ts", "src/workers/email.ts", "src/lib/cache.ts",
+  "src/routes/settings.tsx", "src/state/reducers/orders.ts",
+];
+
+const RISKS = [
+  "touches 14 files across 3 services",
+  "no test coverage on the changed paths",
+  "modifies the payments module",
+  "rewrites the auth middleware",
+  "bundles an unrelated dependency bump",
+  "deletes 200 lines with no explanation",
+  "changes a database migration already applied in prod",
+];
+
+const SAFE_CMDS = [
+  "npm install", "rm -rf node_modules", "npx tsc --noEmit",
+  "git checkout -b feature/dark-mode", "mkdir -p src/components",
+  "cat package.json", "git commit -am \"wip\"", "npm run test -- --watch=false",
+  "pkill -f webpack", "curl https://registry.npmjs.org/react",
+  "git stash", "docker compose up -d",
+];
+
+const DANGER_CMDS = [
+  "psql -c 'DROP TABLE users;'",
+  "git push --force origin main",
+  "kubectl delete namespace production",
+  "aws s3 rm s3://prod-backups --recursive",
+  "psql -c \"UPDATE users SET plan = 'free';\"",
+  "redis-cli FLUSHALL",
 ];
 
 const BUGS = [
@@ -592,7 +686,6 @@ const BUGS = [
   "Auth token never expiring", "Uncaught promise rejection in checkout",
 ];
 
-/* Errors you actually have to copy. Kept short enough to paste comfortably. */
 const ERRORS = [
   "TypeError: Cannot read properties of null (reading 'id') at UserProfile.render (profile.tsx:142)",
   "FATAL: connection pool exhausted — 100/100 in use at db/pool.ts:88",
@@ -607,6 +700,7 @@ const ERRORS = [
 ];
 
 const pick = a => a[Math.floor(Math.random() * a.length)];
+const rint = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
 /* ==========================================================================
    HELPERS
@@ -626,25 +720,26 @@ function money(n) {
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
-/* ---- claude code history (feature ships live here, not the event log) ---- */
 const histEl = $('history');
-
 function histPrompt(text) {
   const empty = histEl.querySelector('.h-empty');
   if (empty) empty.remove();
-
   const you = document.createElement('div');
   you.className = 'h-you';
   you.innerHTML = '<span class="c">&gt;</span>' + esc(text);
-
   const res = document.createElement('div');
   res.className = 'h-res pending';
   res.textContent = 'working…';
-
   histEl.append(you, res);
   while (histEl.children.length > 120) histEl.firstChild.remove();
   histEl.scrollTop = histEl.scrollHeight;
   return res;
+}
+function histPending(el, text) {
+  if (!el) return;
+  el.className = 'h-res pending';
+  el.textContent = text;
+  histEl.scrollTop = histEl.scrollHeight;
 }
 function histResolve(el, html) {
   if (!el) return;
@@ -653,7 +748,6 @@ function histResolve(el, html) {
   histEl.scrollTop = histEl.scrollHeight;
 }
 
-/* ---- event log (incidents, purchases, notes) ---- */
 const logEl = $('log');
 function log(msg, cls) {
   const d = document.createElement('div');
@@ -662,43 +756,201 @@ function log(msg, cls) {
   d.className = cls || '';
   d.innerHTML = '<span class="t">' + mm + ':' + ss + '</span>' + msg;
   logEl.prepend(d);
-  while (logEl.children.length > 60) logEl.lastChild.remove();
+  while (logEl.children.length > 80) logEl.lastChild.remove();
+}
+function flash(cls) {
+  document.body.classList.remove(cls);
+  void document.body.offsetWidth;
+  document.body.classList.add(cls);
 }
 
 /* ==========================================================================
-   ACTIONS
+   THE PIPELINE
+   stages: think → [perm] → [review] → test → [red] → [autofix] → [deploy]
+   Bracketed stages are the chores the Workflow branch deletes.
    ========================================================================== */
-function startBusy(kind, total, entry) {
-  state.busy = { kind, total: Math.max(0.0001, total), left: Math.max(0.0001, total), entry };
+let buildSeq = 0;    // every pipeline run gets a unique id so the stage card
+                     // can never reuse a previous run's rendering
+
+function startBuild(text) {
+  const entry = histPrompt(text);
+  const total = thinkTime();
+
+  // decide the permission ask up front, fire it midway through thinking
+  let perm = null;
+  if (Math.random() < CONFIG.PERMISSION_CHANCE) {
+    const danger = Math.random() < CONFIG.DANGEROUS_SHARE;
+    perm = { cmd: danger ? pick(DANGER_CMDS) : pick(SAFE_CMDS), danger, done: false };
+  }
+
+  state.build = {
+    id: ++buildSeq,
+    kind: 'feature', stage: 'think', timer: total, total,
+    entry, perm, diff: null, clean: null,
+  };
 }
 
-/* Enter is the only verb. What it does depends on the situation. */
-function submitPrompt() {
-  const text = $('prompt').value.trim();
+function makeDiff() {
+  const risky = Math.random() < CONFIG.RISKY_DIFF_CHANCE;
+  return {
+    file: pick(FILES), add: rint(8, 240), del: rint(0, 90),
+    risky, reason: risky ? pick(RISKS) : null,
+    name: pick(FEATURES),
+  };
+}
 
-  if (state.busy) return;                              // already working
+/* quality actually applied when a diff ships */
+const diffQuality = d => d && d.risky ? quality() * CONFIG.RISKY_QUALITY_MULT : quality();
 
-  if (state.incident) {
-    if (!text) return;
-    if (errorMatches(text, state.incident)) {
-      const entry = histPrompt(text);
-      startBusy('repair', repairTime(), entry);
+function resolvePermission(allow) {
+  const b = state.build;
+  if (!b || b.stage !== 'perm') return;
+  const p = b.perm;
+  p.done = true;
+
+  if (!allow) {
+    if (p.danger) {
+      histResolve(b.entry, '<span class="ok">Denied <code>' + esc(p.cmd) +
+                           '</code>. Good catch.</span>');
+      log('Denied <b>' + esc(p.cmd) + '</b> — disaster averted.', 'fix');
     } else {
-      const entry = histPrompt(text || '(nothing)');
-      histResolve(entry, '<span class="bad">Production is on fire. Paste the ' +
-                         'error message above — exactly as written — to fix it.</span>');
+      histResolve(b.entry, '<span class="warn">Denied <code>' + esc(p.cmd) +
+                           '</code>. Claude could not continue.</span>');
     }
-    $('prompt').value = '';
+    state.build = null;            // refusing abandons the work either way
     return;
   }
 
-  const entry = histPrompt(text || pick(FEATURES).toLowerCase());
-  startBusy('build', buildTime(), entry);
+  if (p.danger) {
+    state.disasters++;
+    const lost = Math.floor(state.users * CONFIG.DANGEROUS_USER_LOSS);
+    state.users -= lost;
+    state.usersLost += lost;
+    log('You approved <b>' + esc(p.cmd) + '</b>. <span style="color:var(--warn)">−' +
+        fmt(lost) + ' users.</span> It ran instantly and completely.', 'oops');
+    flash('oops');
+  }
+  b.stage = 'think';               // resume where we left off
+}
+
+function afterThink() {
+  const b = state.build;
+  b.diff = makeDiff();
+  if (state.autoAccept) { toTest(); }
+  else {
+    b.stage = 'review';
+    histPending(b.entry, 'diff ready — waiting for review');
+  }
+}
+
+function toTest() {
+  const b = state.build;
+  b.stage = 'test';
+  b.timer = b.total = testTime();
+  histPending(b.entry, 'running tests…');
+}
+
+function afterTest() {
+  const b = state.build;
+  b.clean = Math.random() < diffQuality(b.diff);
+  if (b.clean) return toDeploy();
+  if (state.ci) {                  // CI repairs it without asking
+    b.stage = 'autofix';
+    b.timer = b.total = autofixTime();
+    histPending(b.entry, 'CI is repairing the build…');
+    return;
+  }
+  b.stage = 'red';
+  b.failing = rint(1, 6);
+  histPending(b.entry, b.failing + ' tests failing — waiting on you');
+}
+
+function toDeploy() {
+  const b = state.build;
+  if (state.cd) return completeBuild();
+  b.stage = 'deploy';
+  histPending(b.entry, 'green — waiting for deploy');
+}
+
+function completeBuild() {
+  const b = state.build;
+  state.build = null;
+  state.features++;
+
+  const room   = Math.max(0, userCap() - state.users);
+  const gained = Math.min(usersPerFeature(), room);
+  state.users += gained;
+  if (!b.clean) state.bugs++;
+
+  const tail = gained > 0
+    ? '<span class="ok">deployed · +' + gained + ' users</span>'
+    : '<span class="warn">deployed · at capacity, no new users</span>';
+  const flag = b.clean ? '' : ' <span class="bad">(shipped with a bug)</span>';
+  histResolve(b.entry, esc(b.diff.name) + ' <span style="color:var(--dimmer)">·</span> ' +
+              tail + flag);
+}
+
+/* ---- the single "advance" verb, driven by Enter ---- */
+function advance() {
+  const b = state.build;
+
+  if (state.incident) { submitRepair(); return; }
+  if (!b) { submitPrompt(); return; }
+  if (b.kind !== 'feature') return;      // timed action, nothing to advance
+
+  if (b.stage === 'perm')   return resolvePermission(true);
+  if (b.stage === 'review') return approveDiff();
+  if (b.stage === 'red')    return fixRedBuild();
+  if (b.stage === 'deploy') return completeBuild();
+}
+
+function approveDiff() {
+  const b = state.build;
+  if (!b || b.stage !== 'review') return;
+  toTest();
+}
+function rejectDiff() {
+  const b = state.build;
+  if (!b || b.stage !== 'review') return;
+  histResolve(b.entry, '<span class="warn">Rejected the diff. Nothing shipped.</span>');
+  state.build = null;
+}
+function fixRedBuild() {
+  const b = state.build;
+  if (!b || b.stage !== 'red') return;
+  b.stage = 'autofix';
+  b.timer = b.total = autofixTime();
+  histPending(b.entry, 'fixing the failing tests…');
+}
+function shipAnyway() {
+  const b = state.build;
+  if (!b || b.stage !== 'red') return;
+  b.clean = false;
+  toDeploy();
+}
+
+function submitPrompt() {
+  const text = $('prompt').value.trim();
+  if (state.build || state.incident) return;
+  startBuild(text || pick(FEATURES).toLowerCase());
   $('prompt').value = '';
 }
 
-/* Lenient on purpose: the incident code alone is enough, and extra text
-   around a full paste is fine. You still have to actually copy something. */
+function submitRepair() {
+  const text = $('prompt').value.trim();
+  if (!state.incident || state.build) return;
+  if (!text) return;
+  if (errorMatches(text, state.incident)) {
+    const entry = histPrompt(text);
+    state.build = { id: ++buildSeq, kind:'repair', stage:'work',
+                    timer: repairTime(), total: repairTime(), entry };
+  } else {
+    histResolve(histPrompt(text), '<span class="bad">Production is on fire. Paste the ' +
+                'error message above — exactly as written — to fix it.</span>');
+  }
+  $('prompt').value = '';
+}
+
 function errorMatches(input, inc) {
   const norm = s => s.toLowerCase().replace(/\s+/g, ' ').trim();
   const a = norm(input);
@@ -707,66 +959,40 @@ function errorMatches(input, inc) {
   return a.includes(norm(inc.msg));
 }
 
-function completeBuild(entry) {
-  state.features++;
-
-  const room   = Math.max(0, userCap() - state.users);
-  const gained = Math.min(usersPerFeature(), room);
-  state.users += gained;                    // users land only now, on ship
-
-  const clean = Math.random() < quality();
-  if (!clean) state.bugs++;
-
-  const name = pick(FEATURES);
-  const tail = gained > 0
-    ? '<span class="ok">shipped · +' + gained + ' users</span>'
-    : '<span class="warn">shipped · at capacity, no new users</span>';
-  histResolve(entry, name + ' <span style="color:var(--dimmer)">·</span> ' + tail);
-}
-
-function completeFix(entry) {
-  state.bugs = Math.max(0, state.bugs - 1);
-  histResolve(entry, '<span class="ok">Fixed: ' + esc(pick(BUGS)) + '.</span>');
-}
-
-function completeRepair(entry) {
-  const inc = state.incident;
-  state.incident = null;
-  state.bugs = Math.max(0, state.bugs - 1);
-  histResolve(entry, '<span class="ok">Resolved ' + esc(inc ? inc.code : '') +
-                     ' — service restored.</span>');
-  log('Incident ' + esc(inc ? inc.code : '') + ' resolved.', 'fix');
-}
-
 function fixBug() {
-  if (state.busy || state.incident || state.bugs <= 0) return;
+  if (state.build || state.incident || state.bugs <= 0) return;
   const entry = histPrompt('fix the top bug in the backlog');
-  startBusy('fix', buildTime(), entry);
+  state.build = { id: ++buildSeq, kind:'bugfix', stage:'work',
+                  timer: autofixTime(), total: autofixTime(), entry };
 }
 
 function triggerIncident() {
-  if (state.incident) return;               // one fire at a time
-
+  if (state.incident) return;
   state.incidents++;
-  const code = 'ERR-' + (1000 + Math.floor(Math.random() * 9000));
+
+  /* Park any feature work. Leaving it in state.build would block the repair
+     prompt, which is the only way out of an incident — a hard deadlock. */
+  if (state.build && state.build.kind === 'feature') {
+    state.stashed = state.build;
+    state.build = null;
+    histPending(state.stashed.entry, 'paused — production is down');
+  }
+
+  const code = 'ERR-' + rint(1000, 9999);
   const msg  = pick(ERRORS);
   state.incident = { msg, code, text: msg + ' [' + code + ']' };
 
-  const lo   = Math.min(CONFIG.INCIDENT_MIN_LOSS, CONFIG.INCIDENT_MAX_LOSS);
-  const hi   = Math.max(CONFIG.INCIDENT_MIN_LOSS, CONFIG.INCIDENT_MAX_LOSS);
+  const lo = Math.min(CONFIG.INCIDENT_MIN_LOSS, CONFIG.INCIDENT_MAX_LOSS);
+  const hi = Math.max(CONFIG.INCIDENT_MIN_LOSS, CONFIG.INCIDENT_MAX_LOSS);
   const lost = Math.min(state.users, Math.ceil(state.users * (lo + Math.random() * (hi - lo))));
-  state.users -= lost;
-  state.usersLost += lost;
+  state.users -= lost; state.usersLost += lost;
 
   log('INCIDENT ' + code + ' — <span style="color:var(--bad)">−' + fmt(lost) +
       ' users</span>, and bleeding until fixed.', 'incident');
-
-  document.body.classList.remove('incident');
-  void document.body.offsetWidth;
-  document.body.classList.add('incident');
+  flash('incident');
 
   if (state.incidents === 1) {
-    log('Copy the error and paste it into the prompt. Nothing ships until it is fixed.', 'note');
+    log('Copy the error and paste it into the prompt. The pipeline is frozen until you do.', 'note');
   }
 }
 
@@ -780,6 +1006,63 @@ function buy(n) {
   renderTree();
 }
 
+function finishRepair(b) {
+  const inc = state.incident;
+  state.incident = null;
+  state.bugs = Math.max(0, state.bugs - 1);
+
+  // pick the parked feature work back up, exactly where it stopped
+  state.build = state.stashed || null;
+  state.stashed = null;
+  if (state.build) histPending(state.build.entry, 'resumed');
+
+  histResolve(b.entry, '<span class="ok">Resolved ' + esc(inc ? inc.code : '') +
+                       ' — service restored.</span>');
+  log('Incident ' + (inc ? inc.code : '') + ' resolved.', 'fix');
+}
+
+function finishBugfix(b) {
+  state.bugs = Math.max(0, state.bugs - 1);
+  state.build = null;
+  histResolve(b.entry, '<span class="ok">Fixed: ' + esc(pick(BUGS)) + '.</span>');
+}
+
+/* Stages that run on a clock. Anything else is waiting on the player. */
+const TIMED_STAGES = ['think', 'test', 'autofix', 'work'];
+
+function advancePipeline(dt) {
+  let b = state.build;
+  if (!b) return;
+  if (state.incident && b.kind === 'feature') return;   // frozen while prod is down
+  if (!TIMED_STAGES.includes(b.stage)) return;          // waiting on a decision
+
+  b.timer -= dt;
+
+  // the permission ask interrupts thinking halfway through
+  if (b.stage === 'think' && b.perm && !b.perm.done && b.timer <= b.total * 0.5) {
+    if (state.skipPerms) {
+      b.stage = 'perm';                                 // resolvePermission expects this stage
+      resolvePermission(true);                          // may clear state.build
+    } else if (state.allowlist && !b.perm.danger) {
+      b.perm.done = true;                               // never even shown
+    } else {
+      b.stage = 'perm';
+      histPending(b.entry, 'waiting for permission');
+      return;                                           // hold until answered
+    }
+    b = state.build;
+    if (!b || b.stage !== 'think') return;
+  }
+
+  if (b.timer > 0) return;
+
+  if (b.kind === 'repair')   return finishRepair(b);
+  if (b.kind === 'bugfix')   return finishBugfix(b);
+  if (b.stage === 'think')   return afterThink();
+  if (b.stage === 'test')    return afterTest();
+  if (b.stage === 'autofix') { b.clean = true; return toDeploy(); }
+}
+
 /* ==========================================================================
    GAME LOOP
    ========================================================================== */
@@ -787,26 +1070,14 @@ function tick(dt) {
   state.elapsed += dt;
   state.cash += state.users * CONFIG.REVENUE_PER_USER * dt;
 
-  // unresolved incidents bleed users continuously
   if (state.incident && state.users > 0) {
     const before = state.users;
     state.users = Math.max(0, state.users * (1 - bleedRate() * dt));
     state.usersLost += before - state.users;
   }
 
-  // whatever the prompt is currently working on
-  if (state.busy) {
-    state.busy.left -= dt;
-    if (state.busy.left <= 0) {
-      const { kind, entry } = state.busy;
-      state.busy = null;
-      if (kind === 'build')  completeBuild(entry);
-      if (kind === 'fix')    completeFix(entry);
-      if (kind === 'repair') completeRepair(entry);
-    }
-  }
+  advancePipeline(dt);
 
-  // agents ship on their own, incident or not
   if (state.agents > 0) {
     state.agentTimer += dt * state.agents;
     let guard = 0;
@@ -835,8 +1106,117 @@ function phaseName() {
   return 'Enterprise';
 }
 
+/* the stage card is rebuilt only when its shape changes, so buttons survive */
+let stageKey = '';
+function renderStage() {
+  const b = state.build;
+  const box = $('stage');
+
+  const key = !b ? 'none'
+    : [b.id, b.kind, b.stage,
+       b.perm ? b.perm.cmd + b.perm.danger + b.perm.done : '-',
+       b.diff ? b.diff.file + b.diff.add + b.diff.del + b.diff.risky : '-',
+       b.failing || 0].join('|');
+
+  if (key === stageKey) {
+    const bar = box.querySelector('.cbar');
+    if (bar && b && b.total) bar.style.width = (100 * (1 - Math.max(0, b.timer) / b.total)).toFixed(1) + '%';
+    return;
+  }
+  stageKey = key;
+  box.innerHTML = '';
+  if (!b) return;
+
+  const card = document.createElement('div');
+  const parts = [];
+
+  const timed = ['think','test','autofix','work'].includes(b.stage);
+  if (timed) parts.push('<div class="cbar"></div>');
+
+  if (b.kind === 'repair') {
+    card.className = 'card fail';
+    parts.push('<div class="chead">repairing production</div>',
+               '<div class="cbody">Rolling back and patching…</div>');
+  } else if (b.kind === 'bugfix') {
+    card.className = 'card wait';
+    parts.push('<div class="chead">fixing a known bug</div>',
+               '<div class="cbody">Working through the backlog…</div>');
+  } else if (b.stage === 'think') {
+    card.className = 'card wait';
+    parts.push('<div class="chead">claude is working</div>',
+               '<div class="cbody">Writing the change…</div>');
+  } else if (b.stage === 'perm') {
+    card.className = 'card ask';
+    parts.push('<div class="chead">permission required</div>',
+               '<div class="cbody">Claude wants to run:</div>',
+               '<div class="cmd' + (b.perm.danger ? ' danger' : '') + '">' + esc(b.perm.cmd) + '</div>',
+               '<div class="crow">' +
+                 '<button class="btn pri" data-act="allow">Allow<kbd>y</kbd></button>' +
+                 '<button class="btn no" data-act="deny">Deny<kbd>n</kbd></button>' +
+               '</div>',
+               '<div class="csub">Read it before you answer.</div>');
+  } else if (b.stage === 'review') {
+    card.className = 'card diff';
+    parts.push('<div class="chead">review the diff</div>',
+               '<div class="cbody">' + esc(b.diff.file) +
+                 ' <span style="color:var(--good)">+' + b.diff.add + '</span>' +
+                 ' <span style="color:var(--bad)">−' + b.diff.del + '</span></div>',
+               b.diff.risky
+                 ? '<div class="crisk">⚠ ' + esc(b.diff.reason) + '</div>'
+                 : '<div class="csub">Looks routine.</div>',
+               '<div class="crow">' +
+                 '<button class="btn pri" data-act="approve">Approve<kbd>↵</kbd></button>' +
+                 '<button class="btn no" data-act="reject">Reject<kbd>r</kbd></button>' +
+               '</div>');
+  } else if (b.stage === 'test') {
+    card.className = 'card wait';
+    parts.push('<div class="chead">running tests</div>',
+               '<div class="cbody">' + esc(b.diff.file) + '…</div>');
+  } else if (b.stage === 'red') {
+    card.className = 'card fail';
+    parts.push('<div class="chead">build failing</div>',
+               '<div class="cbody">' + b.failing + ' test' + (b.failing === 1 ? '' : 's') +
+                 ' failing on ' + esc(b.diff.file) + '.</div>',
+               '<div class="crow">' +
+                 '<button class="btn ok" data-act="fixred">Fix it<kbd>↵</kbd></button>' +
+                 '<button class="btn no" data-act="shipany">Ship anyway<kbd>s</kbd></button>' +
+               '</div>',
+               '<div class="csub">Shipping it saves ' + autofixTime().toFixed(1) +
+                 's and buys you a bug.</div>');
+  } else if (b.stage === 'autofix') {
+    card.className = 'card wait';
+    parts.push('<div class="chead">repairing the build</div>',
+               '<div class="cbody">Patching the failing tests…</div>');
+  } else if (b.stage === 'deploy') {
+    card.className = 'card ready';
+    parts.push('<div class="chead">ready to deploy</div>',
+               '<div class="cbody">' + esc(b.diff.name) + ' — tests green.</div>',
+               '<div class="crow">' +
+                 '<button class="btn ok" data-act="deploy">Deploy<kbd>↵</kbd></button>' +
+               '</div>');
+  }
+
+  card.innerHTML = parts.join('');
+  box.appendChild(card);
+
+  card.querySelectorAll('button[data-act]').forEach(btn => {
+    btn.onclick = () => {
+      const a = btn.dataset.act;
+      if (a === 'allow')   resolvePermission(true);
+      if (a === 'deny')    resolvePermission(false);
+      if (a === 'approve') approveDiff();
+      if (a === 'reject')  rejectDiff();
+      if (a === 'fixred')  fixRedBuild();
+      if (a === 'shipany') shipAnyway();
+      if (a === 'deploy')  completeBuild();
+      $('prompt').focus();
+    };
+  });
+}
+
 function render() {
   const cap = userCap();
+  const b = state.build;
 
   $('s-users').textContent    = fmt(state.users);
   $('s-cap').textContent      = 'cap ' + fmt(cap) + (state.users >= cap ? ' — FULL' : '');
@@ -849,66 +1229,60 @@ function render() {
   $('s-quality').textContent  = Math.round(quality() * 100) + '%';
   $('phase').textContent      = phaseName();
   $('f-stats').textContent    = state.incidents + ' incident' + (state.incidents === 1 ? '' : 's') +
-                                ' · ' + fmt(state.usersLost) + ' users lost';
+                                ' · ' + fmt(state.usersLost) + ' users lost' +
+                                (state.disasters ? ' · ' + state.disasters + ' self-inflicted' : '');
 
-  // bug tile stays out of the UI entirely until Monitoring is bought
   $('tile-bugs').style.display = state.monitoring ? '' : 'none';
   if (state.monitoring) $('s-bugs').textContent = fmt(state.bugs);
 
-  // prompt row: progress bar, placeholder, labels
-  const busy = state.busy;
-  const row  = $('promptrow');
-  const bar  = $('bar');
-  row.classList.toggle('busy', !!busy);
-  row.classList.toggle('alarm', !!state.incident);
+  renderStage();
 
-  bar.className = 'bar' + (busy ? ' ' + (busy.kind === 'build' ? '' : busy.kind) : '');
-  bar.style.width = busy ? (100 * (1 - busy.left / busy.total)).toFixed(1) + '%' : '0%';
-
+  const canType = !b && !state.incident;
   const p = $('prompt');
-  if (busy)                p.placeholder = busy.kind === 'repair' ? 'repairing…' : 'building…';
-  else if (state.incident) p.placeholder = 'paste the error message above, then press Enter';
-  else                     p.placeholder = 'add dark mode to the settings page';
+  $('promptrow').classList.toggle('alarm', !!state.incident);
+  $('promptrow').classList.toggle('idle', !canType && !state.incident);
+  p.placeholder = state.incident ? 'paste the error message above, then press Enter'
+                : b               ? 'the pipeline is busy — use the card above'
+                                  : 'add dark mode to the settings page';
 
-  if (busy) {
-    const verb = busy.kind === 'repair' ? 'repairing' : busy.kind === 'fix' ? 'fixing' : 'building';
-    $('statuslabel').textContent = verb + '… ' + busy.left.toFixed(1) + 's';
-  } else if (state.incident) {
-    $('statuslabel').textContent = 'repair ' + repairTime().toFixed(1) + 's';
-  } else {
-    $('statuslabel').textContent = 'build ' + buildTime().toFixed(1) + 's';
-  }
+  // what Enter does right now
+  let enterDoes = 'build it';
+  if (state.incident)               enterDoes = 'submit the fix';
+  else if (b && b.stage === 'perm')   enterDoes = 'allow';
+  else if (b && b.stage === 'review') enterDoes = 'approve';
+  else if (b && b.stage === 'red')    enterDoes = 'fix the build';
+  else if (b && b.stage === 'deploy') enterDoes = 'deploy';
+  else if (b)                         enterDoes = 'wait';
 
   $('hintlabel').innerHTML = state.incident
-    ? '<span style="color:var(--bad)">Production is down.</span> Nothing ships until it is fixed.'
-    : 'Describe anything and press <kbd>Enter</kbd> to build it.';
+    ? '<span style="color:var(--bad)">Production is down.</span> Pipeline frozen until it is fixed.'
+    : '<kbd>Enter</kbd> → ' + enterDoes;
+
+  const stagesLeft = [!state.autoAccept && 'review', !state.ci && 'red-build',
+                      !state.cd && 'deploy'].filter(Boolean).length;
+  $('statuslabel').textContent = 'think ' + thinkTime().toFixed(1) + 's · ' +
+    (stagesLeft ? stagesLeft + ' manual stage' + (stagesLeft === 1 ? '' : 's') : 'fully automated');
 
   $('h-meta').textContent = state.features > 0 ? fmt(state.features) + ' shipped' : '';
 
-  // incident banner
   const al = $('alert');
   if (state.incident) {
     al.style.display = '';
     if ($('alert-err').textContent !== state.incident.text) {
       $('alert-err').textContent = state.incident.text;
     }
-    $('bleedlabel').textContent = 'losing ' +
-      (bleedRate() * 100).toFixed(1) + '% of users per second';
-  } else {
-    al.style.display = 'none';
-  }
+    $('bleedlabel').textContent = 'losing ' + (bleedRate() * 100).toFixed(1) + '% of users per second';
+  } else al.style.display = 'none';
 
   const fb = $('fixbtn');
   fb.style.display = state.monitoring ? '' : 'none';
-  fb.disabled = !!busy || !!state.incident || state.bugs <= 0;
+  fb.disabled = !!b || !!state.incident || state.bugs <= 0;
   fb.textContent = state.bugs > 0 ? 'Fix a bug (' + fmt(state.bugs) + ' open)' : 'No known bugs';
 
-  // per-frame node affordability + live descriptions
   for (const n of allNodes()) {
     const el = $('node-' + n.id);
     if (!el) continue;
-    const isSpent = spent(n) || (isMaxed(n) && owned(n));
-    if (!isSpent) {
+    if (!(spent(n) || (isMaxed(n) && owned(n)))) {
       el.classList.toggle('poor', unlocked(n) && state.cash < costOf(n));
       const c = el.querySelector('.ncost');
       if (c) c.textContent = money(costOf(n));
@@ -916,36 +1290,27 @@ function render() {
     const d = el.querySelector('.ndesc');
     if (d) d.textContent = n.desc();
   }
-
-  const total = allNodes().reduce((s, n) => s + (n.count || 0), 0);
-  $('tree-meta').textContent = total + ' unlocked';
+  $('tree-meta').textContent = allNodes().reduce((s, n) => s + (n.count || 0), 0) + ' unlocked';
 }
 
 function renderTree() {
   const box = $('tree');
   box.innerHTML = '';
-
-  for (const b of tree) {
+  for (const br of tree) {
     const col = document.createElement('div');
     col.className = 'branch';
-    col.innerHTML = '<div class="bname">' + b.branch + '<i>' + b.note + '</i></div>';
+    col.innerHTML = '<div class="bname">' + br.branch + '<i>' + br.note + '</i></div>';
 
-    for (const n of b.nodes) {
-      const isSpent  = spent(n);
-      const isMax    = isMaxed(n);
-      const isLocked = !unlocked(n);
-
+    for (const n of br.nodes) {
+      const isSpent = spent(n), isMax = isMaxed(n), isLocked = !unlocked(n);
       const el = document.createElement(isSpent || isLocked || isMax ? 'div' : 'button');
       el.id = 'node-' + n.id;
-      el.className = 'node' +
-        (owned(n) ? ' owned linked' : '') +
-        (isLocked ? ' locked' : '') +
-        (isMax && !owned(n) ? ' maxed' : '');
+      el.className = 'node' + (owned(n) ? ' owned linked' : '') +
+                     (isLocked ? ' locked' : '') + (isMax && !owned(n) ? ' maxed' : '');
 
-      let right;
-      if (isSpent)        right = 'owned';
-      else if (isMax)     right = owned(n) ? 'maxed ×' + n.count : 'maxed';
-      else                right = money(costOf(n));
+      const right = isSpent ? 'owned'
+                  : isMax   ? (owned(n) ? 'maxed ×' + n.count : 'maxed')
+                            : money(costOf(n));
 
       el.innerHTML =
         '<div class="ntop"><span class="nname">' + n.name + '</span>' +
@@ -965,31 +1330,24 @@ function renderTree() {
 }
 
 /* ==========================================================================
-   TUNING PANEL
+   TUNING
    ========================================================================== */
 function renderTuning() {
   const box = $('tuning');
   box.innerHTML = '';
-
   const grid = document.createElement('div');
   grid.className = 'tunegrid';
 
   for (const t of TUNABLES) {
     const row = document.createElement('div');
     row.className = 'tune';
-
     const lab = document.createElement('label');
-    lab.textContent = t.label;
-    lab.htmlFor = 'tune-' + t.key;
-
+    lab.textContent = t.label; lab.htmlFor = 'tune-' + t.key;
     const inp = document.createElement('input');
-    inp.type = 'number';
-    inp.id = 'tune-' + t.key;
-    inp.step = t.step;
+    inp.type = 'number'; inp.id = 'tune-' + t.key; inp.step = t.step;
     if (t.min !== undefined) inp.min = t.min;
     if (t.max !== undefined) inp.max = t.max;
     inp.value = CONFIG[t.key];
-
     inp.addEventListener('input', () => {
       const v = parseFloat(inp.value);
       if (!Number.isFinite(v)) { inp.classList.add('invalid'); return; }
@@ -1000,20 +1358,20 @@ function renderTuning() {
       CONFIG[t.key] = c;
       renderTree();
     });
-
     row.append(lab, inp);
     grid.appendChild(row);
   }
 
   const note = document.createElement('div');
   note.className = 'tunenote';
-  note.textContent = 'Every value applies immediately — no reset needed. Skills store ' +
-    'multipliers rather than fixed numbers, so changing a base value re-derives ' +
-    'everything already unlocked. Reset restarts the run but keeps your tuning.';
+  note.textContent = 'Every value applies immediately. Skills store multipliers rather than ' +
+    'fixed numbers, so changing a base value re-derives everything already unlocked. ' +
+    'Reset restarts the run but keeps your tuning.';
 
   const acts = document.createElement('div');
   acts.className = 'actions';
   const rst = document.createElement('button');
+  rst.className = 'btn';
   rst.textContent = 'Restore defaults';
   rst.onclick = () => {
     Object.assign(CONFIG, DEFAULTS);
@@ -1021,7 +1379,6 @@ function renderTuning() {
     log('Tuning restored to defaults.', 'note');
   };
   acts.appendChild(rst);
-
   box.append(grid, note, acts);
 }
 
@@ -1030,16 +1387,26 @@ function renderTuning() {
    ========================================================================== */
 const promptEl = $('prompt');
 
-promptEl.addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
-  e.preventDefault();
-  submitPrompt();
+/* One global handler: Enter always advances, and the single-letter shortcuts
+   only bind while a stage is actually waiting on a decision. */
+document.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const b = state.build;
+  const waiting = b && b.kind === 'feature' &&
+                  ['perm','review','red','deploy'].includes(b.stage);
+
+  if (e.key === 'Enter') { e.preventDefault(); advance(); return; }
+  if (!waiting) return;
+
+  const k = e.key.toLowerCase();
+  if (b.stage === 'perm'   && k === 'y') { e.preventDefault(); resolvePermission(true);  }
+  if (b.stage === 'perm'   && k === 'n') { e.preventDefault(); resolvePermission(false); }
+  if (b.stage === 'review' && k === 'r') { e.preventDefault(); rejectDiff(); }
+  if (b.stage === 'red'    && k === 's') { e.preventDefault(); shipAnyway(); }
 });
 
 $('fixbtn').onclick = () => { fixBug(); promptEl.focus(); };
 
-/* Copy button, with a fallback for browsers that block the async clipboard
-   on file:// origins. */
 $('copybtn').onclick = async () => {
   if (!state.incident) return;
   const text = state.incident.text;
@@ -1047,17 +1414,12 @@ $('copybtn').onclick = async () => {
     $('copybtn').textContent = 'Copied — now paste it';
     setTimeout(() => { if ($('copybtn')) $('copybtn').textContent = 'Copy error'; }, 1600);
   };
-  try {
-    await navigator.clipboard.writeText(text);
-    done();
-  } catch (err) {
+  try { await navigator.clipboard.writeText(text); done(); }
+  catch (err) {
     const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;opacity:0';
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand('copy');
-    ta.remove();
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy'); ta.remove();
     if (ok) done();
     else {
       $('copybtn').textContent = 'Select the text and copy it';
@@ -1067,17 +1429,14 @@ $('copybtn').onclick = async () => {
   promptEl.focus();
 };
 
-/* Two-step reset — confirm() is auto-dismissed in some embedded browsers. */
 const resetBtn = $('reset');
 let resetArmed = false, resetTimer = null;
-
 function disarmReset() {
   resetArmed = false;
   resetBtn.classList.remove('armed');
   resetBtn.textContent = 'reset';
   if (resetTimer) { clearTimeout(resetTimer); resetTimer = null; }
 }
-
 resetBtn.onclick = () => {
   if (!resetArmed) {
     resetArmed = true;
@@ -1091,13 +1450,12 @@ resetBtn.onclick = () => {
   tree = makeTree();
   logEl.innerHTML = '';
   histEl.innerHTML = '<div class="h-empty">No history yet. Describe a feature and press Enter.</div>';
-  lastKey = '';
+  lastKey = ''; stageKey = '';
   renderTree(); render();
   log('Fresh repo. Good luck.', 'note');
   promptEl.focus();
 };
 
-// rebuild the tree only when the visible shape actually changes
 let lastKey = '';
 function unlockWatch() {
   let key = '';
