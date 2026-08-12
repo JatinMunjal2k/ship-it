@@ -274,26 +274,29 @@
   /* the origin marker: the app everything radiates from */
   .hub {
     position: absolute; transform: translate(-50%, -50%);
-    width: 92px; height: 92px; border-radius: 50%;
+    width: 74px; height: 74px; border-radius: 50%;
     border: 1px dashed #34343c; display: flex; align-items: center;
     justify-content: center; text-align: center;
     font-size: 9.5px; letter-spacing: 1px; text-transform: uppercase;
     color: var(--dimmer); pointer-events: none;
   }
 
+  /* Near-square so the map reads as a board. Names wrap rather than truncate. */
   .tile {
     position: absolute; transform: translate(-50%, -50%);
-    width: 138px; box-sizing: border-box;
+    width: 104px; height: 68px; box-sizing: border-box;
     background: var(--panel-2); color: var(--text);
-    border: 1px solid var(--border); border-left-width: 3px; border-radius: 6px;
-    padding: 6px 9px; font: inherit; text-align: left; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 7px; font: inherit; text-align: center; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 2px; overflow: hidden;
     transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
   }
   .tile .tname {
-    display: block; font-size: 11px; font-weight: 600; line-height: 1.3;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    display: block; font-size: 10px; font-weight: 600; line-height: 1.25;
+    letter-spacing: -0.1px; word-break: break-word;
   }
-  .tile .tcost { display: block; font-size: 10.5px; color: var(--good); margin-top: 1px; }
+  .tile .tcost { display: block; font-size: 9.5px; color: var(--good); }
 
   /* affordable: branch-coloured and lit */
   .tile.ready { box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 4px 14px rgba(0,0,0,0.4); }
@@ -305,8 +308,9 @@
   .tile.own { cursor: default; background: rgba(255,255,255,0.03); }
   .tile.own .tcost { opacity: 0.75; }
   /* a repeatable you own but can still buy — must stay obviously clickable */
+  .tile.stacked { border-width: 2px; }
   .tile.stacked .tcost { color: var(--good); }
-  .tile.warnish .tname::after { content: ' ⚠'; color: var(--bad); font-size: 10px; }
+  .tile.warnish .tname::after { content: ' ⚠'; color: var(--bad); font-size: 9px; }
 
   /* an owned skill leads somewhere you cannot see yet */
   .stub {

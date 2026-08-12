@@ -29,59 +29,60 @@ export const BRANCH_COLORS = {
 
 export const POSITIONS = {
   /* Workflow — climbs up and to the right, meeting Testing at CI */
-  w0: { x:  0.0, y: -2.0 },
-  w1: { x:  0.1, y: -3.2 },
-  w2: { x:  1.1, y: -4.2 },
-  w3: { x:  2.3, y: -5.2 },   // needs w2 + t1: the map's one real convergence
-  w4: { x:  2.4, y: -6.4 },
-  w5: { x:  3.5, y: -7.4 },
+  w0: { x:  0.0, y: -1.6 },
+  w1: { x:  0.1, y: -2.6 },
+  w2: { x:  1.0, y: -3.4 },
+  w3: { x:  2.0, y: -4.2 },   // needs w2 + t1: the map's one real convergence
+  w4: { x:  2.1, y: -5.2 },
+  w5: { x:  3.0, y: -6.0 },
 
   /* Testing — up and right, deliberately near Workflow so the CI link is short */
-  t1: { x:  2.1, y: -2.1 },
-  t2: { x:  3.5, y: -3.0 },
-  t3: { x:  4.8, y: -3.9 },
+  t1: { x:  1.8, y: -1.7 },
+  t2: { x:  2.9, y: -2.4 },
+  t3: { x:  4.0, y: -3.1 },
 
   /* Quality — up and left */
-  q1: { x: -2.0, y: -2.0 },
-  q2: { x: -3.0, y: -3.0 },
-  q3: { x: -3.3, y: -4.2 },
-  q4: { x: -4.4, y: -5.2 },
+  q1: { x: -1.8, y: -1.6 },
+  q2: { x: -2.7, y: -2.4 },
+  q3: { x: -2.9, y: -3.4 },
+  q4: { x: -3.8, y: -4.2 },
 
   /* Velocity — straight out to the left */
-  v1: { x: -3.0, y:  0.1 },
-  v2: { x: -4.3, y: -0.6 },
-  v3: { x: -5.6, y: -1.3 },
-  v4: { x: -6.9, y: -2.0 },
+  v1: { x: -2.6, y:  0.1 },
+  v2: { x: -3.7, y: -0.5 },
+  v3: { x: -4.8, y: -1.0 },
+  v4: { x: -5.9, y: -1.6 },
 
   /* Capacity — down and left */
-  c1: { x: -2.0, y:  2.0 },
-  c2: { x: -3.1, y:  3.0 },
-  c3: { x: -4.2, y:  4.0 },
-  c4: { x: -5.3, y:  5.0 },
+  c1: { x: -1.8, y:  1.7 },
+  c2: { x: -2.7, y:  2.5 },
+  c3: { x: -3.6, y:  3.3 },
+  c4: { x: -4.5, y:  4.1 },
 
   /* Automation — straight down */
-  a1: { x:  0.5, y:  2.1 },
-  a2: { x:  0.6, y:  3.3 },
-  a3: { x:  1.7, y:  4.3 },
-  a4: { x:  1.8, y:  5.5 },
+  a1: { x:  0.4, y:  1.8 },
+  a2: { x:  0.5, y:  2.8 },
+  a3: { x:  1.5, y:  3.6 },
+  a4: { x:  1.6, y:  4.6 },
 
   /* Reliability — down and right, forking at Alerting */
-  r1: { x:  3.0, y:  0.5 },
-  r2: { x:  4.3, y:  1.2 },
-  r3: { x:  5.6, y:  1.9 },
-  r4: { x:  4.2, y:  3.0 },   // fork off r2
-  r5: { x:  6.8, y:  3.0 },   // fork off r3
+  r1: { x:  2.6, y:  0.5 },
+  r2: { x:  3.7, y:  1.1 },
+  r3: { x:  4.8, y:  1.7 },
+  r4: { x:  3.6, y:  2.4 },   // fork off r2
+  r5: { x:  5.9, y:  2.6 },   // fork off r3
 };
 
-/* Cell size in pixels. Wide because nodes carry text rather than icons, and
-   tight vertically so a useful slice of the map fits without panning. */
-export const CELL_X = 158;
-export const CELL_Y = 76;
+/* Cell size in pixels, sized against the tile in index.html (104x68). Tight
+   gaps so the map reads as a connected board rather than scattered cards —
+   nodes are near-square and names wrap onto two lines. */
+export const CELL_X = 124;
+export const CELL_Y = 82;
 
 export const ZOOM_MIN = 0.45;
-export const ZOOM_MAX = 1.4;
+export const ZOOM_MAX = 1.5;
 /* Slightly out, so the first look shows the shape rather than three nodes. */
-export const ZOOM_START = 0.8;
+export const ZOOM_START = 0.9;
 
 /* Reports ids missing a position, or positions naming an unknown id. */
 export function layoutProblems(nodeIds) {

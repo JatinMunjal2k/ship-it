@@ -156,64 +156,81 @@ document.addEventListener('keydown', e => {
 window.addEventListener('scroll', hideTip, { passive: true });
 
 /* ---- map: drag to pan, scroll to zoom -------------------------------------
-   Pointer events so a finger drag works the same as a mouse. A drag that moves
-   more than a few pixels swallows the click, so panning across the map never
-   buys the skill you happened to start on. */
+   Pointer events, so a finger drag behaves like a mouse.
+
+   Two things here are load-bearing for clicking to keep working:
+
+   1. Pointer capture is taken only once a drag has actually started. Capturing
+      on pointerdown retargets the following click to the panel, so a tile's
+      own handler never fires and nothing can be bought.
+   2. "Did we drag" is straight-line distance from where the press began, not
+      accumulated path length. Summing every jitter of a slow, careful click
+      trips a small threshold and swallows the click.
+*/
 const wrap = $('treewrap');
-let dragging = false, dragMoved = 0, lastX = 0, lastY = 0, pointerId = null;
+const DRAG_SLOP = 6;                  // px of travel before a press becomes a pan
+let pressing = false, dragging = false, didDrag = false;
+let startX = 0, startY = 0, lastX = 0, lastY = 0, pointerId = null;
 
 wrap.addEventListener('pointerdown', e => {
   if (e.button !== undefined && e.button !== 0) return;
-  /* The zoom/recenter buttons live inside the pan surface, so pressing one
-     would otherwise start a drag and then have its click swallowed. */
+  /* The zoom/recenter buttons live inside the pan surface. */
   if (e.target.closest && e.target.closest('#treectl')) return;
-  dragging = true; dragMoved = 0; pointerId = e.pointerId;
-  lastX = e.clientX; lastY = e.clientY;
-  setGrabbing(true);
-  /* Capture keeps a fast drag from escaping the panel. It can throw if the
-     pointer is already gone, and losing it only costs us capture, not panning. */
-  try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  pressing = true; dragging = false; didDrag = false;
+  pointerId = e.pointerId;
+  startX = lastX = e.clientX;
+  startY = lastY = e.clientY;
 });
 
 wrap.addEventListener('pointermove', e => {
-  if (!dragging || e.pointerId !== pointerId) return;
+  if (!pressing || e.pointerId !== pointerId) return;
+
+  if (!dragging) {
+    const travelled = Math.hypot(e.clientX - startX, e.clientY - startY);
+    if (travelled < DRAG_SLOP) return;          // still a click, not a pan
+    dragging = true; didDrag = true;
+    setGrabbing(true);
+    hideTip();
+    try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+
   const dx = e.clientX - lastX, dy = e.clientY - lastY;
   lastX = e.clientX; lastY = e.clientY;
-  dragMoved += Math.abs(dx) + Math.abs(dy);
-  if (dragMoved > 3) hideTip();
   panBy(dx, dy);
 });
 
 function endDrag() {
-  if (!dragging) return;
-  dragging = false;
-  setGrabbing(false);
-  if (pointerId !== null) {
+  if (!pressing) return;
+  if (dragging && pointerId !== null) {
     try { wrap.releasePointerCapture(pointerId); } catch (err) { /* ignore */ }
   }
+  pressing = false; dragging = false;
+  setGrabbing(false);
   pointerId = null;
 }
 wrap.addEventListener('pointerup', endDrag);
 wrap.addEventListener('pointercancel', endDrag);
 
-/* Suppress the click that ends a real drag, so panning across the map never
-   buys a skill. Capture phase, so it lands before the tile's own handler.
-   The controls are exempt: they never start a drag, so they never reset the
-   counter, and would otherwise eat their first click after every pan. */
+/* Swallow only the click that ends a genuine pan. Capture phase so it lands
+   before the tile's handler; controls exempt so they never lose a click. */
 wrap.addEventListener('click', e => {
   if (e.target.closest && e.target.closest('#treectl')) return;
-  if (dragMoved > 4) { e.stopPropagation(); e.preventDefault(); dragMoved = 0; }
+  if (didDrag) { e.stopPropagation(); e.preventDefault(); didDrag = false; }
 }, true);
 
+/* Zoom scales with how hard the wheel was turned, but gently, and each event
+   is capped — trackpads fire a stream of them per gesture and a per-event
+   factor compounds into a jump. */
 wrap.addEventListener('wheel', e => {
   e.preventDefault();
   const r = wrap.getBoundingClientRect();
-  const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+  const delta = Math.max(-40, Math.min(40, e.deltaY));
+  const factor = Math.exp(-delta * 0.0011);
   setZoom(getZoom() * factor, e.clientX - r.left, e.clientY - r.top);
 }, { passive: false });
 
-$('zoomin').onclick    = () => setZoom(getZoom() * 1.18);
-$('zoomout').onclick   = () => setZoom(getZoom() / 1.18);
+$('zoomin').onclick    = () => setZoom(getZoom() * 1.12);
+$('zoomout').onclick   = () => setZoom(getZoom() / 1.12);
 $('recenter').onclick  = () => recenterTree(true);   // reset framing AND zoom
 
 /* The map cannot be framed until it has a measurable width, which may be a
