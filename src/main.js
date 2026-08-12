@@ -19,7 +19,12 @@ import {
 } from './render.js';
 import { saveGame, loadGame, wipeSave, hasSave, autosaveTick, describeAge, storageOK } from './save.js';
 
+/* Clear the file:// fallback notice. The timer in index.html may already have
+   shown it if the modules were slow to arrive over the network, so hide it
+   here rather than relying on the timer never firing. */
 window.__booted = true;
+const bootfail = document.getElementById('bootfail');
+if (bootfail) bootfail.style.display = 'none';
 
 /* ==========================================================================
    Config problems are a hard stop — a readable list beats a NaN economy

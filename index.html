@@ -483,11 +483,13 @@
 </div>
 
 <script>
-  /* Classic script: if the module below never runs, say so with the fix. */
+  /* Classic script: if the module below never runs, say so with the fix.
+     Generous delay so a slow network is not mistaken for a failure — main.js
+     hides this again the moment it boots. */
   window.__booted = false;
   setTimeout(function () {
     if (!window.__booted) document.getElementById('bootfail').style.display = 'block';
-  }, 1200);
+  }, 4000);
 </script>
 <script type="module" src="src/main.js"></script>
 </body>
