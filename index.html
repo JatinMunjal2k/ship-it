@@ -291,28 +291,15 @@
   #tip .to { color: var(--accent); margin-top: 5px; font-size: 10.5px;
              text-transform: uppercase; letter-spacing: 0.5px; }
 
-  /* ---------- tuning ---------- */
-  #tuning { padding: 12px 16px; }
-  .tunegrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 22px; }
-  @media (max-width: 760px) { .tunegrid { grid-template-columns: 1fr; } }
-  .tune { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid #202026; }
-  .tune label { flex: 1; font-size: 11px; color: var(--dim); }
-  .tune input {
-    width: 74px; background: var(--bg); color: var(--text);
-    border: 1px solid var(--border); border-radius: 4px;
-    padding: 3px 6px; font: inherit; font-size: 11px; text-align: right;
+  /* ---------- config load failure ---------- */
+  #configerr {
+    display: none; margin: 16px 0 0; padding: 12px 14px;
+    border: 1px solid var(--bad); border-radius: 6px;
+    background: rgba(229,72,77,0.08); color: var(--text); font-size: 12px;
   }
-  .tune input:focus { outline: none; border-color: var(--accent); }
-  .tune input.invalid { border-color: var(--bad); }
-  .tunenote { font-size: 10.5px; color: var(--dimmer); padding: 10px 0 0; line-height: 1.55; }
-  .tunenote b { color: var(--dim); }
-  #export {
-    display: none; width: 100%; height: 150px; margin-top: 10px;
-    background: var(--bg); color: var(--text); border: 1px solid var(--accent);
-    border-radius: 5px; padding: 9px 11px; font: inherit; font-size: 11px;
-    resize: vertical; white-space: pre;
-  }
-  #savestate { font-size: 10.5px; margin-top: 8px; }
+  #configerr b { color: var(--bad); }
+  #configerr code { color: var(--warn); }
+  #configerr ul { margin: 8px 0 0; padding-left: 20px; color: var(--dim); }
 
   footer {
     margin-top: 16px; display: flex; justify-content: space-between;
@@ -334,6 +321,8 @@
     <span style="color:var(--dimmer);font-size:11px">an incremental game about software</span>
     <span class="phase" id="phase">Garage</span>
   </header>
+
+  <div id="configerr"></div>
 
   <div class="tabs">
     <button class="tab on" id="tab-game"><span class="k">1</span>Game</button>
@@ -420,11 +409,6 @@
       <h2>skill tree <span class="meta" id="tree-meta"></span></h2>
       <div id="tree"></div>
     </div>
-
-    <div class="panel">
-      <h2>tuning <span class="meta">live config</span></h2>
-      <div id="tuning"></div>
-    </div>
   </div>
 
   <footer>
@@ -435,106 +419,85 @@
 </div>
 <div id="tip"></div>
 
+<script src="config.js"></script>
 <script>
 "use strict";
 
 /* ==========================================================================
-   CONFIG
-   Editable live from the tuning panel. Autosaved to localStorage, so a
-   refresh keeps your edits. "Copy as code" emits this block to paste back
-   into this file, which is the only change that survives sharing the game.
+   CONFIG — loaded from config.js, which is the only place to change balance.
+   config.js groups values into sections for readability; the game wants one
+   flat object, so we flatten here and check nothing is missing or duplicated.
+   A typo in config.js should say so on screen, not produce a NaN economy.
    ========================================================================== */
-const CONFIG = {
-  USERS_PER_FEATURE_MIN:   6,
-  USERS_PER_FEATURE_MAX:  18,
-  REVENUE_PER_USER:        0.015,
-  BASE_QUALITY:            0.50,   // P(a change is defect-free)
-  BASE_USER_CAP:         250,
-
-  CATCH_RATE_UNIT:         0.70,   // P(tests catch a defect) — unit tests
-  CATCH_RATE_INTEGRATION:  0.90,   // ...integration tests
-  CATCH_RATE_E2E:          0.97,   // ...end-to-end tests
-
-  THINK_TIME_START:        2.5,
-  THINK_TIME_MIN:          0.1,
-  TEST_TIME:               1.2,
-  AUTOFIX_TIME:            2.0,
-  DEPLOY_TIME:             1.5,
-
-  RISKY_DIFF_CHANCE:       0.25,
-  RISKY_QUALITY_MULT:      0.35,
-
-  PERMISSION_CHANCE:       0.45,
-  DANGEROUS_SHARE:         0.18,
-  DANGEROUS_USER_LOSS:     0.30,
-
-  AGENT_INTERVAL:          6.0,
-  REPAIR_TIME_START:       5.0,
-  REPAIR_TIME_MIN:         0.5,
-
-  INCIDENT_CHANCE_PER_BUG: 0.004,
-  INCIDENT_MIN_LOSS:       0.04,
-  INCIDENT_MAX_LOSS:       0.12,
-  INCIDENT_BLEED:          0.025,
-  STUBBORN_CHANCE:         0.15,
-  STUBBORN_DEPLOYS_MIN:    2,
-  STUBBORN_DEPLOYS_MAX:    3,
-};
-
-const DEFAULTS = Object.assign({}, CONFIG);
-const SAVE_KEY = 'shipit.config.v1';
-
-const TUNABLES = [
-  { key:'USERS_PER_FEATURE_MIN',   label:'Users / feature — min',   step:1,     min:0 },
-  { key:'USERS_PER_FEATURE_MAX',   label:'Users / feature — max',   step:1,     min:0 },
-  { key:'REVENUE_PER_USER',        label:'$ per user / sec',        step:0.005, min:0 },
-  { key:'BASE_QUALITY',            label:'Code quality (defect-free)', step:0.05, min:0, max:1 },
-  { key:'BASE_USER_CAP',           label:'Base user cap',           step:50,    min:1 },
-  { key:'CATCH_RATE_UNIT',         label:'Catch rate — unit',       step:0.05,  min:0, max:1 },
-  { key:'CATCH_RATE_INTEGRATION',  label:'Catch rate — integration',step:0.05,  min:0, max:1 },
-  { key:'CATCH_RATE_E2E',          label:'Catch rate — e2e',        step:0.01,  min:0, max:1 },
-  { key:'THINK_TIME_START',        label:'Think time (s)',          step:0.5,   min:0 },
-  { key:'THINK_TIME_MIN',          label:'Min think time (s)',      step:0.1,   min:0 },
-  { key:'TEST_TIME',               label:'Test run (s)',            step:0.2,   min:0 },
-  { key:'AUTOFIX_TIME',            label:'Autofix (s)',             step:0.2,   min:0 },
-  { key:'DEPLOY_TIME',             label:'Deploy (s)',              step:0.2,   min:0 },
-  { key:'RISKY_DIFF_CHANCE',       label:'Risky diff chance',       step:0.05,  min:0, max:1 },
-  { key:'RISKY_QUALITY_MULT',      label:'Risky × quality',         step:0.05,  min:0, max:1 },
-  { key:'PERMISSION_CHANCE',       label:'Permission ask chance',   step:0.05,  min:0, max:1 },
-  { key:'DANGEROUS_SHARE',         label:'…of those, destructive',  step:0.02,  min:0, max:1 },
-  { key:'DANGEROUS_USER_LOSS',     label:'Destructive user loss',   step:0.05,  min:0, max:1 },
-  { key:'AGENT_INTERVAL',          label:'Agent interval (s)',      step:0.5,   min:0.1 },
-  { key:'REPAIR_TIME_START',       label:'Repair time (s)',         step:0.5,   min:0 },
-  { key:'REPAIR_TIME_MIN',         label:'Min repair time (s)',     step:0.1,   min:0 },
-  { key:'INCIDENT_CHANCE_PER_BUG', label:'Incident chance /bug /s', step:0.001, min:0, max:1 },
-  { key:'INCIDENT_MIN_LOSS',       label:'Incident churn — min',    step:0.01,  min:0, max:1 },
-  { key:'INCIDENT_MAX_LOSS',       label:'Incident churn — max',    step:0.01,  min:0, max:1 },
-  { key:'INCIDENT_BLEED',          label:'Churn /sec unresolved',   step:0.005, min:0, max:1 },
-  { key:'STUBBORN_CHANCE',         label:'Stubborn incident share', step:0.05,  min:0, max:1 },
-  { key:'STUBBORN_DEPLOYS_MIN',    label:'Stubborn deploys — min',  step:1,     min:1 },
-  { key:'STUBBORN_DEPLOYS_MAX',    label:'Stubborn deploys — max',  step:1,     min:1 },
+const REQUIRED_KEYS = [
+  'USERS_PER_FEATURE_MIN', 'USERS_PER_FEATURE_MAX', 'REVENUE_PER_USER', 'BASE_USER_CAP',
+  'BASE_QUALITY', 'RISKY_DIFF_CHANCE', 'RISKY_QUALITY_MULT',
+  'CATCH_RATE_UNIT', 'CATCH_RATE_INTEGRATION', 'CATCH_RATE_E2E',
+  'THINK_TIME_START', 'THINK_TIME_MIN', 'TEST_TIME', 'AUTOFIX_TIME', 'DEPLOY_TIME',
+  'PERMISSION_CHANCE', 'DANGEROUS_SHARE', 'DANGEROUS_USER_LOSS',
+  'AGENT_INTERVAL',
+  'INCIDENT_CHANCE_PER_BUG', 'INCIDENT_MIN_LOSS', 'INCIDENT_MAX_LOSS', 'INCIDENT_BLEED',
+  'REPAIR_TIME_START', 'REPAIR_TIME_MIN',
+  'STUBBORN_CHANCE', 'STUBBORN_DEPLOYS_MIN', 'STUBBORN_DEPLOYS_MAX',
 ];
 
-/* ---- persistence ---------------------------------------------------- */
-let storageOK = true;
-function saveConfig() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(CONFIG)); }
-  catch (e) { storageOK = false; }
-}
-function loadConfig() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return false;
-    const saved = JSON.parse(raw);
-    let n = 0;
-    for (const k in DEFAULTS) {
-      if (typeof saved[k] === 'number' && Number.isFinite(saved[k])) { CONFIG[k] = saved[k]; n++; }
+/* Flatten the sectioned file into one object, collecting every problem rather
+   than stopping at the first, so one refresh tells you everything to fix. */
+function loadConfigFrom(src) {
+  const config = {}, problems = [], seenIn = {};
+
+  if (!src || typeof src !== 'object') {
+    return { config, problems: ['config.js did not load. It must sit next to index.html.'] };
+  }
+
+  for (const section in src) {
+    const group = src[section];
+    if (!group || typeof group !== 'object') {
+      problems.push('Section "' + section + '" is not an object.');
+      continue;
     }
-    return n > 0;
-  } catch (e) { storageOK = false; return false; }
+    for (const key in group) {
+      if (key in config) {
+        problems.push('"' + key + '" appears in both "' + seenIn[key] + '" and "' +
+                      section + '". Keep it in one section.');
+        continue;
+      }
+      const v = group[key];
+      if (typeof v !== 'number' || !Number.isFinite(v)) {
+        problems.push('"' + key + '" in "' + section + '" is not a finite number: ' + v);
+        continue;
+      }
+      config[key] = v;
+      seenIn[key] = section;
+    }
+  }
+
+  for (const k of REQUIRED_KEYS) {
+    if (!(k in config)) problems.push('"' + k + '" is missing from config.js.');
+  }
+  for (const k in config) {
+    if (REQUIRED_KEYS.indexOf(k) === -1) {
+      problems.push('"' + k + '" in config.js is not a setting the game reads.');
+    }
+  }
+
+  return { config, problems };
 }
-function clearConfig() {
-  try { localStorage.removeItem(SAVE_KEY); } catch (e) { storageOK = false; }
+
+const CONFIG = {};
+const loaded = loadConfigFrom(window.GAME_CONFIG);
+const configProblems = loaded.problems;
+Object.assign(CONFIG, loaded.config);
+
+function reportConfigProblems() {
+  if (!configProblems.length) return false;
+  const el = document.getElementById('configerr');
+  el.style.display = 'block';
+  el.innerHTML = '<b>config.js needs fixing</b> — the game is not running.' +
+    '<ul>' + configProblems.map(p =>
+      '<li>' + p.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) + '</li>'
+    ).join('') + '</ul>';
+  return true;
 }
 
 /* ==========================================================================
@@ -1601,119 +1564,6 @@ function render() {
 }
 
 /* ==========================================================================
-   TUNING PANEL
-   ========================================================================== */
-function configAsCode() {
-  const w = Math.max.apply(null, Object.keys(DEFAULTS).map(k => k.length));
-  const lines = Object.keys(DEFAULTS).map(k => {
-    const v = CONFIG[k];
-    const s = Number.isInteger(v) ? String(v) : String(v);
-    return '  ' + (k + ':').padEnd(w + 2) + ' ' + s + ',';
-  });
-  return 'const CONFIG = {\n' + lines.join('\n') + '\n};';
-}
-
-function renderTuning() {
-  const box = $('tuning');
-  box.innerHTML = '';
-  const grid = document.createElement('div');
-  grid.className = 'tunegrid';
-
-  for (const t of TUNABLES) {
-    const row = document.createElement('div');
-    row.className = 'tune';
-    const lab = document.createElement('label');
-    lab.textContent = t.label; lab.htmlFor = 'tune-' + t.key;
-    const inp = document.createElement('input');
-    inp.type = 'number'; inp.id = 'tune-' + t.key; inp.step = t.step;
-    if (t.min !== undefined) inp.min = t.min;
-    if (t.max !== undefined) inp.max = t.max;
-    inp.value = CONFIG[t.key];
-    inp.addEventListener('input', () => {
-      const v = parseFloat(inp.value);
-      if (!Number.isFinite(v)) { inp.classList.add('invalid'); return; }
-      let c = v;
-      if (t.min !== undefined) c = Math.max(t.min, c);
-      if (t.max !== undefined) c = Math.min(t.max, c);
-      inp.classList.toggle('invalid', c !== v);
-      CONFIG[t.key] = c;
-      saveConfig();
-      renderTree();
-      updateSaveState();
-    });
-    row.append(lab, inp);
-    grid.appendChild(row);
-  }
-
-  const note = document.createElement('div');
-  note.className = 'tunenote';
-  note.innerHTML =
-    'Every value applies immediately. Skills store multipliers rather than fixed numbers, ' +
-    'so changing a base value re-derives everything already unlocked. Reset restarts the run ' +
-    'but keeps your tuning.<br><b>Autosaved to this browser</b> — a refresh keeps your edits. ' +
-    'To make them permanent for everyone, use <b>Copy as code</b> and paste the block over ' +
-    '<b>const CONFIG</b> in index.html.';
-
-  const acts = document.createElement('div');
-  acts.className = 'actions';
-
-  const exp = document.createElement('button');
-  exp.className = 'btn pri';
-  exp.textContent = 'Copy as code';
-  exp.onclick = async () => {
-    const ta = $('export');
-    ta.style.display = 'block';
-    ta.value = configAsCode();
-    ta.select();
-    let copied = false;
-    try { await navigator.clipboard.writeText(ta.value); copied = true; }
-    catch (e) { try { copied = document.execCommand('copy'); } catch (e2) { copied = false; } }
-    exp.textContent = copied ? 'Copied — paste over const CONFIG' : 'Select the text below and copy';
-    setTimeout(() => { exp.textContent = 'Copy as code'; }, 2600);
-  };
-
-  const rst = document.createElement('button');
-  rst.className = 'btn';
-  rst.textContent = 'Restore defaults';
-  rst.onclick = () => {
-    Object.assign(CONFIG, DEFAULTS);
-    clearConfig();
-    $('export').style.display = 'none';
-    renderTuning(); renderTree();
-    log('Tuning restored to defaults, saved copy cleared.', 'note');
-  };
-
-  acts.append(exp, rst);
-
-  const ta = document.createElement('textarea');
-  ta.id = 'export'; ta.readOnly = true; ta.spellcheck = false;
-
-  const sv = document.createElement('div');
-  sv.id = 'savestate';
-
-  box.append(grid, note, acts, ta, sv);
-  updateSaveState();
-}
-
-function updateSaveState() {
-  const el = $('savestate');
-  if (!el) return;
-  const changed = Object.keys(DEFAULTS).filter(k => CONFIG[k] !== DEFAULTS[k]).length;
-  if (!storageOK) {
-    el.style.color = 'var(--bad)';
-    el.textContent = 'This browser blocks localStorage on file:// — edits will not survive a ' +
-                     'refresh. Use Copy as code to keep them.';
-  } else if (changed) {
-    el.style.color = 'var(--accent)';
-    el.textContent = changed + ' value' + (changed === 1 ? '' : 's') +
-                     ' changed from default · saved to this browser';
-  } else {
-    el.style.color = 'var(--dimmer)';
-    el.textContent = 'All values at default.';
-  }
-}
-
-/* ==========================================================================
    INPUT + BOOT
    ========================================================================== */
 const promptEl = $('prompt');
@@ -1824,15 +1674,15 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-const restored = loadConfig();
-renderTuning();
-renderTree();
-setView('game');
-render();
-log('You have an app. It has no users. Type <b>/add</b> to ship something.', 'note');
-if (restored) log('Loaded your saved tuning from this browser.', 'note');
-promptEl.focus();
-requestAnimationFrame(frame);
+/* A bad config.js is a hard stop — better a readable error than a NaN game. */
+if (!reportConfigProblems()) {
+  renderTree();
+  setView('game');
+  render();
+  log('You have an app. It has no users. Type <b>/add</b> to ship something.', 'note');
+  promptEl.focus();
+  requestAnimationFrame(frame);
+}
 </script>
 </body>
 </html>
