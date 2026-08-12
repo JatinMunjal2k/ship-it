@@ -51,10 +51,31 @@
     color: var(--accent); border: 1px solid var(--accent); padding: 2px 8px; border-radius: 3px;
   }
 
+  /* ---------- tabs ---------- */
+  .tabs { display: flex; gap: 6px; margin: 14px 0 0; }
+  .tab {
+    background: var(--panel); color: var(--dim);
+    border: 1px solid var(--border); border-radius: 5px;
+    padding: 6px 13px; font: inherit; font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; gap: 7px;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .tab:hover { color: var(--text); border-color: #3a3a42; }
+  .tab.on { color: var(--accent); border-color: var(--accent); background: rgba(217,119,87,0.07); }
+  .tab .k {
+    font-size: 10px; color: var(--dimmer); border: 1px solid var(--border);
+    border-radius: 3px; padding: 0 4px;
+  }
+  .tab.on .k { color: var(--accent); border-color: rgba(217,119,87,0.5); }
+  .tab .badge {
+    font-size: 10px; background: var(--accent); color: #14100e;
+    border-radius: 8px; padding: 0 5px; font-weight: 700;
+  }
+
   /* ---------- stats ---------- */
   .stats {
     display: flex; gap: 1px; background: var(--border);
-    border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin: 16px 0;
+    border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin: 12px 0 16px;
   }
   .stat { background: var(--panel); padding: 10px 12px; flex: 1 1 0; min-width: 0; }
   .stat .label {
@@ -75,7 +96,7 @@
     background: var(--panel); border: 1px solid var(--border);
     border-radius: 6px; overflow: hidden;
   }
-  .panel + .panel, .cols + .panel { margin-top: 16px; }
+  .panel + .panel { margin-top: 16px; }
   .panel h2 {
     font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
     color: var(--dimmer); margin: 0; padding: 9px 12px;
@@ -85,7 +106,7 @@
   .panel h2 .meta { color: var(--dim); text-transform: none; letter-spacing: 0; }
 
   /* ---------- history ---------- */
-  #history { height: 200px; overflow-y: auto; padding: 10px 12px; font-size: 12px; }
+  #history { height: 196px; overflow-y: auto; padding: 10px 12px; font-size: 12px; }
   #history .h-you { color: var(--text); padding-top: 6px; }
   #history .h-you .c { color: var(--accent); font-weight: 700; margin-right: 6px; }
   #history .h-res { color: var(--dim); padding-left: 16px; }
@@ -95,8 +116,18 @@
   #history .h-res.pending { color: var(--dimmer); }
   #history .h-empty { color: var(--dimmer); }
 
+  /* agent throughput — a count, never a per-feature log line */
+  #agentstrip {
+    padding: 7px 12px; border-top: 1px solid var(--border);
+    background: #101013; font-size: 11px; color: var(--dim);
+    display: flex; gap: 14px; flex-wrap: wrap;
+  }
+  #agentstrip b { color: var(--text); font-weight: 600; }
+  #agentstrip .bad { color: var(--bad); }
+
   /* ---------- pipeline stage card ---------- */
-  #stage { margin: 0 14px 12px; }
+  #stage { margin: 12px 14px 0; }
+  #stage:empty { margin: 0; }
   .card {
     border: 1px solid var(--border); border-radius: 5px;
     background: var(--panel-2); padding: 10px 12px; position: relative; overflow: hidden;
@@ -153,7 +184,7 @@
   .btn.no  { color: var(--dim); }
 
   /* ---------- prompt ---------- */
-  .promptbox { padding: 12px 14px 14px; border-top: 1px solid var(--border); }
+  .promptbox { padding: 12px 14px 14px; }
   .promptrow {
     position: relative; overflow: hidden; display: flex; align-items: center; gap: 8px;
     background: var(--bg); border: 1px solid var(--border);
@@ -172,16 +203,17 @@
     font-size: 11px; color: var(--dimmer); margin-top: 8px;
     display: flex; justify-content: space-between; gap: 10px;
   }
-  .hint kbd {
+  .hint kbd, kbd.k {
     background: var(--panel-2); border: 1px solid var(--border);
     border-radius: 3px; padding: 1px 5px; font: inherit; font-size: 10px; color: var(--dim);
   }
+  .hint code { color: var(--accent); }
   #statuslabel { color: var(--dim); white-space: nowrap; }
-  .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
   /* ---------- incident alert ---------- */
   #alert {
-    margin: 0 14px 12px; padding: 10px 12px;
+    margin: 12px 14px 0; padding: 10px 12px;
     border: 1px solid var(--bad); border-radius: 5px; background: rgba(229, 72, 77, 0.07);
   }
   #alert .ahead {
@@ -200,7 +232,7 @@
 
   /* ---------- event log ---------- */
   #log {
-    height: 420px; overflow-y: auto; padding: 10px 12px; font-size: 12px;
+    height: 430px; overflow-y: auto; padding: 10px 12px; font-size: 12px;
     display: flex; flex-direction: column-reverse;
   }
   #log div { padding: 2px 0; color: var(--dim); word-break: break-word; }
@@ -211,14 +243,11 @@
   #log .fix      { color: var(--good); }
   #log .note     { color: var(--warn); }
 
-  /* ==========================================================================
-     SKILL TREE — compact tiles, one row per branch, details on hover.
-     Locked nodes are not drawn at all; a counter hints at what is left.
-     ========================================================================== */
+  /* ---------- skill tree page ---------- */
   #tree { padding: 4px 0; }
   .brow {
-    display: grid; grid-template-columns: 132px 1fr; gap: 14px;
-    padding: 11px 14px; border-bottom: 1px solid #1e1e23; align-items: start;
+    display: grid; grid-template-columns: 150px 1fr; gap: 16px;
+    padding: 12px 16px; border-bottom: 1px solid #1e1e23; align-items: start;
   }
   .brow:last-child { border-bottom: none; }
   .blabel {
@@ -232,17 +261,14 @@
     background: var(--panel-2); color: var(--text);
     border: 1px solid var(--border); border-radius: 5px;
     padding: 6px 9px; font: inherit; text-align: left; cursor: pointer;
-    min-width: 118px; transition: background 0.12s, border-color 0.12s;
+    min-width: 124px; transition: background 0.12s, border-color 0.12s;
   }
   .tile .tname { display: block; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
   .tile .tcost { display: block; font-size: 10.5px; color: var(--good); margin-top: 1px; }
   .tile:hover:not(.poor):not(.own) { border-color: var(--accent); background: #26262c; }
   .tile.poor { cursor: default; }
   .tile.poor .tcost { color: var(--dimmer); }
-  .tile.own {
-    cursor: default; border-color: var(--accent);
-    background: rgba(217,119,87,0.07);
-  }
+  .tile.own { cursor: default; border-color: var(--accent); background: rgba(217,119,87,0.07); }
   .tile.own .tcost { color: var(--accent); }
   .tile.warnish { border-color: rgba(229,72,77,0.5); }
   .tile.more {
@@ -250,9 +276,8 @@
     min-width: 0; display: flex; align-items: center;
   }
 
-  /* hover card */
   #tip {
-    position: fixed; z-index: 300; max-width: 280px; pointer-events: none;
+    position: fixed; z-index: 300; max-width: 290px; pointer-events: none;
     background: #101013; border: 1px solid var(--accent); border-radius: 6px;
     padding: 9px 11px; font-size: 11.5px; line-height: 1.5;
     box-shadow: 0 8px 24px rgba(0,0,0,0.55); opacity: 0;
@@ -267,8 +292,8 @@
              text-transform: uppercase; letter-spacing: 0.5px; }
 
   /* ---------- tuning ---------- */
-  #tuning { padding: 12px 14px; }
-  .tunegrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 20px; }
+  #tuning { padding: 12px 16px; }
+  .tunegrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 22px; }
   @media (max-width: 760px) { .tunegrid { grid-template-columns: 1fr; } }
   .tune { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid #202026; }
   .tune label { flex: 1; font-size: 11px; color: var(--dim); }
@@ -279,13 +304,15 @@
   }
   .tune input:focus { outline: none; border-color: var(--accent); }
   .tune input.invalid { border-color: var(--bad); }
-  .tunenote { font-size: 10px; color: var(--dimmer); padding: 10px 0 0; line-height: 1.5; }
-  summary {
-    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--dimmer); padding: 9px 12px; background: var(--panel-2);
-    border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+  .tunenote { font-size: 10.5px; color: var(--dimmer); padding: 10px 0 0; line-height: 1.55; }
+  .tunenote b { color: var(--dim); }
+  #export {
+    display: none; width: 100%; height: 150px; margin-top: 10px;
+    background: var(--bg); color: var(--text); border: 1px solid var(--accent);
+    border-radius: 5px; padding: 9px 11px; font: inherit; font-size: 11px;
+    resize: vertical; white-space: pre;
   }
-  summary:hover { color: var(--dim); }
+  #savestate { font-size: 10.5px; margin-top: 8px; }
 
   footer {
     margin-top: 16px; display: flex; justify-content: space-between;
@@ -308,6 +335,11 @@
     <span class="phase" id="phase">Garage</span>
   </header>
 
+  <div class="tabs">
+    <button class="tab on" id="tab-game"><span class="k">1</span>Game</button>
+    <button class="tab" id="tab-skills"><span class="k">2</span>Skill tree<span class="badge" id="tab-badge" style="display:none"></span></button>
+  </div>
+
   <div class="stats">
     <div class="stat">
       <div class="label">Users</div>
@@ -327,7 +359,7 @@
     <div class="stat">
       <div class="label">Code Quality</div>
       <div class="value warn" id="s-quality">50%</div>
-      <div class="sub">clean-ship rate</div>
+      <div class="sub" id="s-detect">no tests — nothing is caught</div>
     </div>
     <div class="stat" id="tile-bugs" style="display:none">
       <div class="label">Open Bugs</div>
@@ -336,57 +368,64 @@
     </div>
   </div>
 
-  <div class="cols">
-    <div class="panel">
-      <h2>claude code <span class="meta" id="h-meta"></span></h2>
+  <!-- ========================= PAGE 1: GAME ========================= -->
+  <div id="view-game">
+    <div class="cols">
+      <div class="panel">
+        <h2>claude code <span class="meta" id="h-meta"></span></h2>
 
-      <div id="history"><div class="h-empty">No history yet. Describe a feature and press Enter.</div></div>
+        <div id="history"><div class="h-empty">No history yet. Type <b>/add</b> and press Enter.</div></div>
 
-      <div id="stage"></div>
+        <div id="agentstrip" style="display:none"></div>
 
-      <div id="alert" style="display:none">
-        <div class="ahead">
-          <span>Production incident — paste the error into the prompt</span>
-          <span class="att" id="attempt"></span>
+        <div id="stage"></div>
+
+        <div id="alert" style="display:none">
+          <div class="ahead">
+            <span>Production incident — paste the error into the prompt</span>
+            <span class="att" id="attempt"></span>
+          </div>
+          <div id="alert-err"></div>
+          <div class="arow">
+            <button class="btn" id="copybtn">Copy error</button>
+            <span class="bleed" id="bleedlabel"></span>
+          </div>
         </div>
-        <div id="alert-err"></div>
-        <div class="arow">
-          <button class="btn" id="copybtn">Copy error</button>
-          <span class="bleed" id="bleedlabel"></span>
+
+        <div class="promptbox">
+          <div class="promptrow" id="promptrow">
+            <span class="chev">&gt;</span>
+            <input id="prompt" autocomplete="off" spellcheck="false" placeholder="/add">
+          </div>
+          <div class="hint">
+            <span id="hintlabel">Type <code>/add</code> and press <kbd>Enter</kbd> to build a feature.</span>
+            <span id="statuslabel"></span>
+          </div>
+          <div class="actions">
+            <button class="btn" id="fixbtn" style="display:none">Fix a bug</button>
+          </div>
         </div>
       </div>
 
-      <div class="promptbox">
-        <div class="promptrow" id="promptrow">
-          <span class="chev">&gt;</span>
-          <input id="prompt" autocomplete="off" spellcheck="false"
-                 placeholder="add dark mode to the settings page">
-        </div>
-        <div class="hint">
-          <span id="hintlabel">Describe anything and press <kbd>Enter</kbd> to build it.</span>
-          <span id="statuslabel"></span>
-        </div>
-        <div class="actions">
-          <button class="btn" id="fixbtn" style="display:none">Fix a bug</button>
-        </div>
+      <div class="panel">
+        <h2>event log</h2>
+        <div id="log"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ====================== PAGE 2: SKILL TREE ====================== -->
+  <div id="view-skills" style="display:none">
+    <div class="panel">
+      <h2>skill tree <span class="meta" id="tree-meta"></span></h2>
+      <div id="tree"></div>
     </div>
 
     <div class="panel">
-      <h2>event log</h2>
-      <div id="log"></div>
+      <h2>tuning <span class="meta">live config</span></h2>
+      <div id="tuning"></div>
     </div>
   </div>
-
-  <div class="panel">
-    <h2>skill tree <span class="meta" id="tree-meta"></span></h2>
-    <div id="tree"></div>
-  </div>
-
-  <details class="panel" id="tunepanel">
-    <summary>tuning &nbsp;·&nbsp; live config</summary>
-    <div id="tuning"></div>
-  </details>
 
   <footer>
     <span id="f-stats">0 incidents · 0 users lost</span>
@@ -400,20 +439,27 @@
 "use strict";
 
 /* ==========================================================================
-   CONFIG — all editable live from the tuning panel.
+   CONFIG
+   Editable live from the tuning panel. Autosaved to localStorage, so a
+   refresh keeps your edits. "Copy as code" emits this block to paste back
+   into this file, which is the only change that survives sharing the game.
    ========================================================================== */
 const CONFIG = {
   USERS_PER_FEATURE_MIN:   6,
   USERS_PER_FEATURE_MAX:  18,
   REVENUE_PER_USER:        0.015,
-  BASE_QUALITY:            0.50,
+  BASE_QUALITY:            0.50,   // P(a change is defect-free)
   BASE_USER_CAP:         250,
 
-  THINK_TIME_START:        2.5,    // Claude writing the diff
+  CATCH_RATE_UNIT:         0.70,   // P(tests catch a defect) — unit tests
+  CATCH_RATE_INTEGRATION:  0.90,   // ...integration tests
+  CATCH_RATE_E2E:          0.97,   // ...end-to-end tests
+
+  THINK_TIME_START:        2.5,
   THINK_TIME_MIN:          0.1,
-  TEST_TIME:               1.2,    // test suite run
-  AUTOFIX_TIME:            2.0,    // repairing a red build
-  DEPLOY_TIME:             1.5,    // pushing it to production
+  TEST_TIME:               1.2,
+  AUTOFIX_TIME:            2.0,
+  DEPLOY_TIME:             1.5,
 
   RISKY_DIFF_CHANCE:       0.25,
   RISKY_QUALITY_MULT:      0.35,
@@ -423,26 +469,30 @@ const CONFIG = {
   DANGEROUS_USER_LOSS:     0.30,
 
   AGENT_INTERVAL:          6.0,
-  REPAIR_TIME_START:       5.0,    // writing the fix for a live incident
+  REPAIR_TIME_START:       5.0,
   REPAIR_TIME_MIN:         0.5,
 
   INCIDENT_CHANCE_PER_BUG: 0.004,
   INCIDENT_MIN_LOSS:       0.04,
   INCIDENT_MAX_LOSS:       0.12,
   INCIDENT_BLEED:          0.025,
-  STUBBORN_CHANCE:         0.15,   // share of incidents needing several deploys
+  STUBBORN_CHANCE:         0.15,
   STUBBORN_DEPLOYS_MIN:    2,
   STUBBORN_DEPLOYS_MAX:    3,
 };
 
 const DEFAULTS = Object.assign({}, CONFIG);
+const SAVE_KEY = 'shipit.config.v1';
 
 const TUNABLES = [
   { key:'USERS_PER_FEATURE_MIN',   label:'Users / feature — min',   step:1,     min:0 },
   { key:'USERS_PER_FEATURE_MAX',   label:'Users / feature — max',   step:1,     min:0 },
   { key:'REVENUE_PER_USER',        label:'$ per user / sec',        step:0.005, min:0 },
-  { key:'BASE_QUALITY',            label:'Base code quality',       step:0.05,  min:0, max:1 },
+  { key:'BASE_QUALITY',            label:'Code quality (defect-free)', step:0.05, min:0, max:1 },
   { key:'BASE_USER_CAP',           label:'Base user cap',           step:50,    min:1 },
+  { key:'CATCH_RATE_UNIT',         label:'Catch rate — unit',       step:0.05,  min:0, max:1 },
+  { key:'CATCH_RATE_INTEGRATION',  label:'Catch rate — integration',step:0.05,  min:0, max:1 },
+  { key:'CATCH_RATE_E2E',          label:'Catch rate — e2e',        step:0.01,  min:0, max:1 },
   { key:'THINK_TIME_START',        label:'Think time (s)',          step:0.5,   min:0 },
   { key:'THINK_TIME_MIN',          label:'Min think time (s)',      step:0.1,   min:0 },
   { key:'TEST_TIME',               label:'Test run (s)',            step:0.2,   min:0 },
@@ -465,6 +515,28 @@ const TUNABLES = [
   { key:'STUBBORN_DEPLOYS_MAX',    label:'Stubborn deploys — max',  step:1,     min:1 },
 ];
 
+/* ---- persistence ---------------------------------------------------- */
+let storageOK = true;
+function saveConfig() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(CONFIG)); }
+  catch (e) { storageOK = false; }
+}
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    let n = 0;
+    for (const k in DEFAULTS) {
+      if (typeof saved[k] === 'number' && Number.isFinite(saved[k])) { CONFIG[k] = saved[k]; n++; }
+    }
+    return n > 0;
+  } catch (e) { storageOK = false; return false; }
+}
+function clearConfig() {
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { storageOK = false; }
+}
+
 /* ==========================================================================
    STATE
    ========================================================================== */
@@ -477,17 +549,18 @@ function freshState() {
     agentIntervalMult: 1, bleedMult: 1,
     agents: 0, monitoring: false,
 
+    quickAdd:  false,   // Enter alone runs /add
     autoAccept: false, allowlist: false, skipPerms: false, ci: false, cd: false,
+    testLevel: 0,       // 0 none, 1 unit, 2 integration, 3 e2e
 
-    agentTimer: 0,
-    build: null,      // active pipeline run
-    stashed: null,    // feature work parked while an incident is live
-    incident: null,
+    agentTimer: 0, agentFeatures: 0, agentBugs: 0,
+    build: null, stashed: null, incident: null,
 
     incidents: 0, usersLost: 0, disasters: 0, elapsed: 0,
   };
 }
 let state = freshState();
+let view = 'game';
 
 /* ---- derived ---- */
 const quality       = () => Math.max(0, Math.min(0.99, CONFIG.BASE_QUALITY + state.qualityBonus));
@@ -501,6 +574,10 @@ const deployTime    = () => Math.max(0.1, CONFIG.DEPLOY_TIME  * state.buildMult)
 const repairTime    = () => Math.max(CONFIG.REPAIR_TIME_MIN, CONFIG.REPAIR_TIME_START * state.repairMult);
 const bleedRate     = () => Math.max(0, CONFIG.INCIDENT_BLEED * state.bleedMult);
 
+const hasTests  = () => state.testLevel > 0;
+const catchRate = () => [0, CONFIG.CATCH_RATE_UNIT, CONFIG.CATCH_RATE_INTEGRATION,
+                         CONFIG.CATCH_RATE_E2E][state.testLevel] || 0;
+
 const atThinkFloor  = () => CONFIG.THINK_TIME_START  * state.buildMult  <= CONFIG.THINK_TIME_MIN  + 1e-9;
 const atRepairFloor = () => CONFIG.REPAIR_TIME_START * state.repairMult <= CONFIG.REPAIR_TIME_MIN + 1e-9;
 
@@ -511,29 +588,64 @@ function usersPerFeature() {
 }
 
 /* ==========================================================================
-   SKILL TREE DATA
+   SKILL TREE DATA — `req` may be a single id or a list of them
    ========================================================================== */
 function makeTree() { return [
 
   { branch:'Workflow', note:'deletes chores', nodes:[
-    { id:'w1', name:'Auto-accept edits', cost:250,
+    { id:'w0', name:'Enter to build', cost:120,
+      desc:()=>'Enter alone runs /add. Stop typing the command every time.',
+      apply:()=>{ state.quickAdd = true; } },
+    { id:'w1', name:'Auto-accept edits', cost:250, req:'w0',
       desc:()=>'Diffs stop waiting for your approval — including the risky ones.',
       warn:'You stop screening. Risky diffs ship themselves.',
       apply:()=>{ state.autoAccept = true; } },
     { id:'w2', name:'Command allowlist', cost:600, req:'w1',
       desc:()=>'Safe commands stop asking permission. Destructive ones still do.',
       apply:()=>{ state.allowlist = true; } },
-    { id:'w3', name:'Continuous integration', cost:1400, req:'w2',
-      desc:()=>'Failing tests are repaired automatically. No red-build decision.',
+    { id:'w3', name:'Continuous integration', cost:1400, req:['w2','t1'],
+      desc:()=>'Caught defects are repaired automatically. No red-build decision.',
       apply:()=>{ state.ci = true; } },
     { id:'w4', name:'Continuous delivery', cost:3000, req:'w3',
-      desc:()=>'Green builds and incident fixes deploy on their own. Deploying still takes '
-               + deployTime().toFixed(1) + 's.',
+      desc:()=>'Green builds and incident fixes deploy on their own. The '
+               + deployTime().toFixed(1) + 's rollout still happens.',
       apply:()=>{ state.cd = true; } },
     { id:'w5', name:'Skip permissions', cost:9000, req:'w4',
       desc:()=>'Nothing ever asks again. Nothing.',
       warn:'Destructive commands run unattended. You find out afterwards.',
       apply:()=>{ state.skipPerms = true; } },
+  ]},
+
+  { branch:'Quality', note:'defect-free rate', nodes:[
+    { id:'q1', name:'Linter', cost:40,
+      desc:()=>'Code quality +4 points — fewer defects written in the first place.',
+      apply:()=>{ state.qualityBonus += 0.04; } },
+    { id:'q2', name:'Type checking', cost:130, req:'q1',
+      desc:()=>'Code quality +6 points.', apply:()=>{ state.qualityBonus += 0.06; } },
+    { id:'q3', name:'Code review', cost:1600, req:'q2',
+      desc:()=>'Code quality +9 points. Agents 35% slower.',
+      warn:'Adds +0.6s to every build, under the floor.',
+      apply:()=>{ state.qualityBonus += 0.09; state.buildFlat += 0.6;
+                  state.agentIntervalMult *= 1.35; } },
+    { id:'q4', name:'Fuzz testing', cost:6500, scale:1.55, repeat:true, req:'q3',
+      desc:()=>'Code quality +2 points. Now ' + (quality()*100).toFixed(0) + '%.',
+      apply:()=>{ state.qualityBonus += 0.02; },
+      maxed:()=>quality() >= 0.99 - 1e-9 },
+  ]},
+
+  { branch:'Testing', note:'catches defects', nodes:[
+    { id:'t1', name:'Unit tests', cost:340,
+      desc:()=>'Adds a test stage that catches ' + (CONFIG.CATCH_RATE_UNIT*100).toFixed(0) +
+               '% of defects before deploy. Until now nothing was catching them.',
+      warn:'Adds a stage. Shipping gets slower before it gets safer.',
+      apply:()=>{ state.testLevel = Math.max(state.testLevel, 1); } },
+    { id:'t2', name:'Integration tests', cost:900, req:'t1',
+      desc:()=>'Catch rate → ' + (CONFIG.CATCH_RATE_INTEGRATION*100).toFixed(0) + '%.',
+      apply:()=>{ state.testLevel = Math.max(state.testLevel, 2); } },
+    { id:'t3', name:'End-to-end tests', cost:4000, req:'t2',
+      desc:()=>'Catch rate → ' + (CONFIG.CATCH_RATE_E2E*100).toFixed(0) +
+               '%. Slow, flaky, worth it.',
+      apply:()=>{ state.testLevel = Math.max(state.testLevel, 3); } },
   ]},
 
   { branch:'Velocity', note:'stage timers', nodes:[
@@ -554,49 +666,25 @@ function makeTree() { return [
 
   { branch:'Capacity', note:'user ceiling', nodes:[
     { id:'c1', name:'Bigger box', cost:60, scale:1.7, repeat:true,
-      desc:()=>'+400 user capacity.',
-      apply:()=>{ state.capBonus += 400; } },
+      desc:()=>'+400 user capacity.', apply:()=>{ state.capBonus += 400; } },
     { id:'c2', name:'Load balancer', cost:600, req:'c1',
-      desc:()=>'+2,000 user capacity.',
-      apply:()=>{ state.capBonus += 2000; } },
+      desc:()=>'+2,000 user capacity.', apply:()=>{ state.capBonus += 2000; } },
     { id:'c3', name:'Autoscaling', cost:3200, req:'c2',
-      desc:()=>'+8,000 user capacity.',
-      apply:()=>{ state.capBonus += 8000; } },
+      desc:()=>'+8,000 user capacity.', apply:()=>{ state.capBonus += 8000; } },
     { id:'c4', name:'Multi-region', cost:14000, scale:1.7, repeat:true, req:'c3',
-      desc:()=>'+30,000 user capacity.',
-      apply:()=>{ state.capBonus += 30000; } },
-  ]},
-
-  { branch:'Quality', note:'clean-ship rate', nodes:[
-    { id:'q1', name:'Linter', cost:40,
-      desc:()=>'Quality +4 points.', apply:()=>{ state.qualityBonus += 0.04; } },
-    { id:'q2', name:'Type checking', cost:130, req:'q1',
-      desc:()=>'Quality +6 points.', apply:()=>{ state.qualityBonus += 0.06; } },
-    { id:'q3', name:'Unit tests', cost:340, req:'q2',
-      desc:()=>'Quality +7 points.', apply:()=>{ state.qualityBonus += 0.07; } },
-    { id:'q4', name:'Integration tests', cost:800, req:'q3',
-      desc:()=>'Quality +6 points.', apply:()=>{ state.qualityBonus += 0.06; } },
-    { id:'q5', name:'Code review', cost:1600, req:'q4',
-      desc:()=>'Quality +9 points. Agents 35% slower.',
-      warn:'Adds +0.6s to every build, under the floor.',
-      apply:()=>{ state.qualityBonus += 0.09; state.buildFlat += 0.6;
-                  state.agentIntervalMult *= 1.35; } },
-    { id:'q6', name:'Fuzz testing', cost:6500, scale:1.55, repeat:true, req:'q5',
-      desc:()=>'Quality +2 points. Now ' + (quality()*100).toFixed(0) + '%.',
-      apply:()=>{ state.qualityBonus += 0.02; },
-      maxed:()=>quality() >= 0.99 - 1e-9 },
+      desc:()=>'+30,000 user capacity.', apply:()=>{ state.capBonus += 30000; } },
   ]},
 
   { branch:'Automation', note:'ships itself', nodes:[
     { id:'a1', name:'Background agent', cost:150, scale:1.6, repeat:true,
-      desc:()=>'One more agent shipping every ' + agentInterval().toFixed(1) + 's.',
+      desc:()=>'One more agent shipping every ' + agentInterval().toFixed(1) +
+               's. Agents skip your pipeline entirely.',
       apply:()=>{ state.agents += 1; } },
     { id:'a2', name:'Agent teams', cost:1400, req:'a1',
       desc:()=>'All agents ship 20% faster.',
       apply:()=>{ state.agentIntervalMult *= 0.80; } },
     { id:'a3', name:'Orchestrator', cost:5500, req:'a2',
-      desc:()=>'+3 agents, hired at once.',
-      apply:()=>{ state.agents += 3; } },
+      desc:()=>'+3 agents, hired at once.', apply:()=>{ state.agents += 3; } },
     { id:'a4', name:'Self-improving loop', cost:18000, scale:1.7, repeat:true, req:'a3',
       desc:()=>'+5 agents. They write their own prompts now.',
       apply:()=>{ state.agents += 5; } },
@@ -625,13 +713,14 @@ let tree = makeTree();
 
 const allNodes = () => tree.flatMap(b => b.nodes);
 const nodeById = id => allNodes().find(n => n.id === id);
+const reqsOf   = n => !n.req ? [] : (Array.isArray(n.req) ? n.req : [n.req]);
 const owned    = n => (n.count || 0) > 0;
 const isMaxed  = n => !!(n.maxed && n.maxed());
-const unlocked = n => !n.req || owned(nodeById(n.req));
+const unlocked = n => reqsOf(n).every(id => owned(nodeById(id)));
+const missing  = n => reqsOf(n).filter(id => !owned(nodeById(id))).map(id => nodeById(id).name);
 const spent    = n => !n.repeat && owned(n);
 const costOf   = n => n.repeat ? Math.floor(n.cost * Math.pow(n.scale || 1.5, n.count || 0)) : n.cost;
 const buyable  = n => unlocked(n) && !spent(n) && !isMaxed(n) && state.cash >= costOf(n);
-/* progressive reveal: a node exists on screen only once its prereq is owned */
 const visible  = n => owned(n) || unlocked(n);
 
 /* ==========================================================================
@@ -659,12 +748,9 @@ const FILES = [
 ];
 
 const RISKS = [
-  "touches 14 files across 3 services",
-  "no test coverage on the changed paths",
-  "modifies the payments module",
-  "rewrites the auth middleware",
-  "bundles an unrelated dependency bump",
-  "deletes 200 lines with no explanation",
+  "touches 14 files across 3 services", "no test coverage on the changed paths",
+  "modifies the payments module", "rewrites the auth middleware",
+  "bundles an unrelated dependency bump", "deletes 200 lines with no explanation",
   "changes a migration already applied in prod",
 ];
 
@@ -677,12 +763,9 @@ const SAFE_CMDS = [
 ];
 
 const DANGER_CMDS = [
-  "psql -c 'DROP TABLE users;'",
-  "git push --force origin main",
-  "kubectl delete namespace production",
-  "aws s3 rm s3://prod-backups --recursive",
-  "psql -c \"UPDATE users SET plan = 'free';\"",
-  "redis-cli FLUSHALL",
+  "psql -c 'DROP TABLE users;'", "git push --force origin main",
+  "kubectl delete namespace production", "aws s3 rm s3://prod-backups --recursive",
+  "psql -c \"UPDATE users SET plan = 'free';\"", "redis-cli FLUSHALL",
 ];
 
 const BUGS = [
@@ -708,7 +791,6 @@ const ERRORS = [
   "AssertionError: expected checkout total 0 to be greater than 0 (orders.ts:57)",
 ];
 
-/* what a failed fix attempt says — the joke writes itself */
 const NOT_HELD = [
   "The fix deployed clean. The error came back with a different stack.",
   "That fixed a different bug. The original is still there.",
@@ -783,11 +865,10 @@ function flash(cls) {
 
 /* ==========================================================================
    THE PIPELINE
-     feature: think → [perm] → [review] → test → [red] → [autofix]
-                    → [deploy] → deploying → shipped
-     repair:  work → [fixready] → deploying → incident clears (or not)
-   Bracketed stages are chores the Workflow branch deletes. `deploying` is a
-   timer, so Continuous delivery removes the click but never the wait.
+     /add → think → [perm] → [review] → [test → [red] → [autofix]]
+                  → [deploy] → deploying → shipped
+   The test stage exists only once Unit tests is owned. Before that a defect
+   goes straight to production and you never see it happen.
    ========================================================================== */
 let buildSeq = 0;
 
@@ -803,7 +884,7 @@ function startBuild(text) {
 
   state.build = {
     id: ++buildSeq, kind: 'feature', stage: 'think', timer: total, total,
-    entry, perm, diff: null, clean: null,
+    entry, perm, diff: null, defective: null,
   };
 }
 
@@ -850,12 +931,16 @@ function resolvePermission(allow) {
 function afterThink() {
   const b = state.build;
   b.diff = makeDiff();
-  if (state.autoAccept) toTest();
+  /* the defect roll happens here, once, and is hidden from the player */
+  b.defective = Math.random() >= diffQuality(b.diff);
+  if (state.autoAccept) afterReview();
   else { b.stage = 'review'; histPending(b.entry, 'diff ready — waiting for review'); }
 }
 
-function toTest() {
+/* after review: run tests if you own any, otherwise straight to the gate */
+function afterReview() {
   const b = state.build;
+  if (!hasTests()) return toDeployGate();
   b.stage = 'test';
   b.timer = b.total = testTime();
   histPending(b.entry, 'running tests…');
@@ -863,8 +948,9 @@ function toTest() {
 
 function afterTest() {
   const b = state.build;
-  b.clean = Math.random() < diffQuality(b.diff);
-  if (b.clean) return toDeployGate();
+  const caught = b.defective && Math.random() < catchRate();
+  if (!caught) return toDeployGate();          // green, or a defect that slipped past
+
   if (state.ci) {
     b.stage = 'autofix';
     b.timer = b.total = autofixTime();
@@ -876,18 +962,17 @@ function afterTest() {
   histPending(b.entry, b.failing + ' tests failing — waiting on you');
 }
 
-/* the gate before deploying: a click, unless CD owns it */
 function toDeployGate() {
   const b = state.build;
   if (state.cd) return startDeploy();
   b.stage = 'deploy';
-  histPending(b.entry, 'green — waiting for deploy');
+  histPending(b.entry, 'waiting for deploy');
 }
 
 function startDeploy() {
   const b = state.build;
   if (!b) return;
-  if (b.kind === 'feature' && b.stage !== 'deploy' && b.stage !== 'red') return;
+  if (b.kind === 'feature' && b.stage !== 'deploy') return;
   if (b.kind === 'repair'  && b.stage !== 'fixready') return;
   b.stage = 'deploying';
   b.timer = b.total = deployTime();
@@ -901,16 +986,16 @@ function completeBuild(b) {
   const room   = Math.max(0, userCap() - state.users);
   const gained = Math.min(usersPerFeature(), room);
   state.users += gained;
-  if (!b.clean) state.bugs++;
+  if (b.defective) state.bugs++;
 
   const tail = gained > 0
     ? '<span class="ok">deployed · +' + gained + ' users</span>'
     : '<span class="warn">deployed · at capacity, no new users</span>';
-  const flag = b.clean ? '' : ' <span class="bad">(shipped with a bug)</span>';
+  /* only tell them about the bug if monitoring would have shown it anyway */
+  const flag = b.defective && state.monitoring ? ' <span class="bad">(defect shipped)</span>' : '';
   histResolve(b.entry, esc(b.diff.name) + ' <span style="color:var(--dimmer)">·</span> ' + tail + flag);
 }
 
-/* a deployed incident fix — which may not be enough */
 function completeFixDeploy(b) {
   const inc = state.incident;
   state.build = null;
@@ -918,7 +1003,6 @@ function completeFixDeploy(b) {
 
   inc.deploysMade++;
   if (inc.deploysMade < inc.deploysNeeded) {
-    // regenerate the error so the next attempt needs a fresh copy-paste
     inc.code = 'ERR-' + rint(1000, 9999);
     inc.msg  = pick(ERRORS);
     inc.text = inc.msg + ' [' + inc.code + ']';
@@ -926,7 +1010,7 @@ function completeFixDeploy(b) {
     log('Fix deployed — <b>still down</b>. Attempt ' + inc.deploysMade + ' of ' +
         inc.deploysNeeded + '.', 'incident');
     flash('incident');
-    return;                      // stash stays parked, incident stays live
+    return;
   }
 
   state.incident = null;
@@ -950,8 +1034,7 @@ function finishBugfix(b) {
 /* ---- player verbs ---- */
 function advance() {
   const b = state.build;
-  if (!b) { if (state.incident) submitRepair(); else submitPrompt(); return; }
-
+  if (!b) { if (state.incident) submitRepair(); else submitCommand(); return; }
   if (b.stage === 'perm')     return resolvePermission(true);
   if (b.stage === 'review')   return approveDiff();
   if (b.stage === 'red')      return fixRedBuild();
@@ -962,7 +1045,7 @@ function advance() {
 function approveDiff() {
   const b = state.build;
   if (!b || b.stage !== 'review') return;
-  toTest();
+  afterReview();
 }
 function rejectDiff() {
   const b = state.build;
@@ -980,14 +1063,29 @@ function fixRedBuild() {
 function shipAnyway() {
   const b = state.build;
   if (!b || b.stage !== 'red') return;
-  b.clean = false;
-  toDeployGate();
+  toDeployGate();                       // defective stays true
 }
 
-function submitPrompt() {
-  const text = $('prompt').value.trim();
+/* /add is the command that builds a feature, until Enter-to-build is owned */
+function submitCommand() {
+  const raw = $('prompt').value.trim();
   if (state.build || state.incident) return;
-  startBuild(text || pick(FEATURES).toLowerCase());
+
+  if (!raw) {
+    if (state.quickAdd) { startBuild('/add'); $('prompt').value = ''; return; }
+    histResolve(histPrompt(''), '<span class="warn">Type <code>/add</code> to build a feature.</span>');
+    return;
+  }
+
+  const m = raw.match(/^\/add\b\s*(.*)$/i);
+  if (!m) {
+    histResolve(histPrompt(raw), '<span class="bad">Unknown command. ' +
+                'Use <code>/add</code>' + (state.quickAdd ? ', or just press Enter' : '') + '.</span>');
+    $('prompt').value = '';
+    return;
+  }
+
+  startBuild(m[1] ? '/add ' + m[1] : '/add');
   $('prompt').value = '';
 }
 
@@ -1015,7 +1113,7 @@ function errorMatches(input, inc) {
 
 function fixBug() {
   if (state.build || state.incident || state.bugs <= 0) return;
-  const entry = histPrompt('fix the top bug in the backlog');
+  const entry = histPrompt('/fix');
   state.build = { id: ++buildSeq, kind:'bugfix', stage:'work',
                   timer: autofixTime(), total: autofixTime(), entry };
 }
@@ -1024,8 +1122,6 @@ function triggerIncident() {
   if (state.incident) return;
   state.incidents++;
 
-  /* Park any feature work. Leaving it in state.build would block the repair
-     prompt, which is the only way out of an incident — a hard deadlock. */
   if (state.build && state.build.kind === 'feature') {
     state.stashed = state.build;
     state.build = null;
@@ -1075,15 +1171,14 @@ const TIMED_STAGES = ['think', 'test', 'autofix', 'work', 'deploying'];
 function advancePipeline(dt) {
   let b = state.build;
   if (!b) return;
-  if (state.incident && b.kind === 'feature') return;   // frozen while prod is down
-  if (!TIMED_STAGES.includes(b.stage)) return;          // waiting on a decision
+  if (state.incident && b.kind === 'feature') return;
+  if (!TIMED_STAGES.includes(b.stage)) return;
 
   b.timer -= dt;
 
-  // the permission ask interrupts thinking halfway through
   if (b.stage === 'think' && b.perm && !b.perm.done && b.timer <= b.total * 0.5) {
     if (state.skipPerms) {
-      b.stage = 'perm';                                 // resolvePermission expects this
+      b.stage = 'perm';
       resolvePermission(true);
     } else if (state.allowlist && !b.perm.danger) {
       b.perm.done = true;
@@ -1103,7 +1198,7 @@ function advancePipeline(dt) {
     return completeBuild(b);
   }
   if (b.kind === 'bugfix')   return finishBugfix(b);
-  if (b.kind === 'repair')   {                          // fix written, needs deploying
+  if (b.kind === 'repair')   {
     if (state.cd) return startDeploy();
     b.stage = 'fixready';
     histPending(b.entry, 'fix written — waiting for deploy');
@@ -1111,7 +1206,7 @@ function advancePipeline(dt) {
   }
   if (b.stage === 'think')   return afterThink();
   if (b.stage === 'test')    return afterTest();
-  if (b.stage === 'autofix') { b.clean = true; return toDeployGate(); }
+  if (b.stage === 'autofix') { b.defective = false; return toDeployGate(); }
 }
 
 /* ==========================================================================
@@ -1129,15 +1224,17 @@ function tick(dt) {
 
   advancePipeline(dt);
 
+  /* Agents bypass the pipeline. They are counted, never logged per feature. */
   if (state.agents > 0) {
     state.agentTimer += dt * state.agents;
     let guard = 0;
     while (state.agentTimer >= agentInterval() && guard++ < 500) {
       state.agentTimer -= agentInterval();
       state.features++;
+      state.agentFeatures++;
       const room = Math.max(0, userCap() - state.users);
       state.users += Math.min(usersPerFeature(), room);
-      if (Math.random() >= quality()) state.bugs++;
+      if (Math.random() >= quality()) { state.bugs++; state.agentBugs++; }
     }
   }
 
@@ -1145,6 +1242,19 @@ function tick(dt) {
     const p = 1 - Math.pow(1 - CONFIG.INCIDENT_CHANCE_PER_BUG, state.bugs * dt);
     if (Math.random() < p) triggerIncident();
   }
+}
+
+/* ==========================================================================
+   VIEWS
+   ========================================================================== */
+function setView(v) {
+  view = v;
+  $('view-game').style.display   = v === 'game'   ? '' : 'none';
+  $('view-skills').style.display = v === 'skills' ? '' : 'none';
+  $('tab-game').classList.toggle('on', v === 'game');
+  $('tab-skills').classList.toggle('on', v === 'skills');
+  hideTip();
+  if (v === 'game') $('prompt').focus();
 }
 
 /* ==========================================================================
@@ -1224,14 +1334,15 @@ function renderStage() {
                             : '<div class="csub">Looks routine.</div>',
                '<div class="crow">' +
                  '<button class="btn pri" data-act="approve">Approve<kbd>↵</kbd></button>' +
-                 '<button class="btn no" data-act="reject">Reject<kbd>r</kbd></button></div>');
+                 '<button class="btn no" data-act="reject">Reject<kbd>r</kbd></button></div>',
+               hasTests() ? '' : '<div class="csub">No tests. Nothing will check this.</div>');
   } else if (b.stage === 'test') {
     card.className = 'card wait';
     parts.push('<div class="chead">running tests</div>',
                '<div class="cbody">' + esc(b.diff.file) + '…</div>');
   } else if (b.stage === 'red') {
     card.className = 'card fail';
-    parts.push('<div class="chead">build failing</div>',
+    parts.push('<div class="chead">tests caught a defect</div>',
                '<div class="cbody">' + b.failing + ' test' + (b.failing === 1 ? '' : 's') +
                  ' failing on ' + esc(b.diff.file) + '.</div>',
                '<div class="crow">' +
@@ -1246,7 +1357,8 @@ function renderStage() {
   } else if (b.stage === 'deploy') {
     card.className = 'card ready';
     parts.push('<div class="chead">ready to deploy</div>',
-               '<div class="cbody">' + esc(b.diff.name) + ' — tests green.</div>',
+               '<div class="cbody">' + esc(b.diff.name) +
+                 (hasTests() ? ' — tests green.' : ' — untested.') + '</div>',
                '<div class="crow"><button class="btn ok" data-act="deploy">' +
                  'Deploy<kbd>↵</kbd></button></div>',
                '<div class="csub">Takes ' + deployTime().toFixed(1) +
@@ -1254,8 +1366,7 @@ function renderStage() {
   } else if (b.stage === 'deploying') {
     card.className = 'card ready';
     parts.push('<div class="chead">deploying</div>',
-               '<div class="cbody">' + esc(b.diff ? b.diff.name : 'change') +
-                 ' — rolling out…</div>');
+               '<div class="cbody">' + esc(b.diff ? b.diff.name : 'change') + ' — rolling out…</div>');
   }
 
   card.innerHTML = parts.join('');
@@ -1277,7 +1388,7 @@ function renderStage() {
 }
 
 /* ==========================================================================
-   RENDER — skill tree (tiles + hover card + progressive reveal)
+   RENDER — skill tree
    ========================================================================== */
 const tipEl = $('tip');
 let tipFor = null;
@@ -1285,10 +1396,11 @@ let tipFor = null;
 function showTip(n, el) {
   tipFor = n.id;
   const c = costOf(n);
-  const state_ = spent(n) ? 'owned'
-               : isMaxed(n) ? (owned(n) ? 'maxed · owned ×' + n.count : 'maxed out')
-               : n.repeat && n.count ? 'owned ×' + n.count + ' · repeatable'
-               : n.repeat ? 'repeatable' : '';
+  const lock = missing(n);
+  const badge = spent(n) ? 'owned'
+              : isMaxed(n) ? (owned(n) ? 'maxed · owned ×' + n.count : 'maxed out')
+              : n.repeat && n.count ? 'owned ×' + n.count + ' · repeatable'
+              : n.repeat ? 'repeatable' : '';
 
   tipEl.innerHTML =
     '<span class="tt">' + esc(n.name) + '</span>' +
@@ -1296,8 +1408,8 @@ function showTip(n, el) {
       (state.cash < c ? ' — you have ' + money(state.cash) : '') + '</span>') +
     '<div class="td">' + esc(n.desc()) + '</div>' +
     (n.warn && !spent(n) ? '<div class="tw">' + esc(n.warn) + '</div>' : '') +
-    (state_ ? '<div class="to">' + state_ + '</div>' : '');
-
+    (lock.length ? '<div class="tw">Needs ' + esc(lock.join(' + ')) + '</div>' : '') +
+    (badge ? '<div class="to">' + badge + '</div>' : '');
   positionTip(el);
 }
 
@@ -1312,18 +1424,14 @@ function positionTip(el) {
   tipEl.classList.add('on');
   const r = el.getBoundingClientRect();
   const t = tipEl.getBoundingClientRect();
-  let left = r.left;
-  let top  = r.bottom + 8;
+  let left = r.left, top = r.bottom + 8;
   if (left + t.width > window.innerWidth - 12) left = window.innerWidth - t.width - 12;
   if (top + t.height > window.innerHeight - 12) top = r.top - t.height - 8;
   tipEl.style.left = Math.max(12, left) + 'px';
   tipEl.style.top  = Math.max(12, top) + 'px';
 }
 
-function hideTip() {
-  tipFor = null;
-  tipEl.classList.remove('on');
-}
+function hideTip() { tipFor = null; tipEl.classList.remove('on'); }
 
 function renderTree() {
   const box = $('tree');
@@ -1342,10 +1450,9 @@ function renderTree() {
       if (!visible(n)) { hidden++; continue; }
 
       const isSpent = spent(n), isMax = isMaxed(n);
-      const inert = isSpent || (isMax && owned(n)) || (isMax && !owned(n));
+      const inert = isSpent || isMax;
       const el = document.createElement(inert ? 'div' : 'button');
-      el.className = 'tile' +
-        (owned(n) ? ' own' : '') +
+      el.className = 'tile' + (owned(n) ? ' own' : '') +
         (!inert && state.cash < costOf(n) ? ' poor' : '') +
         (n.warn && !owned(n) ? ' warnish' : '');
       el.id = 'tile-' + n.id;
@@ -1396,6 +1503,9 @@ function render() {
                               : state.agents + (state.agents === 1 ? ' agent' : ' agents') +
                                 ' · ' + agentInterval().toFixed(1) + 's';
   $('s-quality').textContent  = Math.round(quality() * 100) + '%';
+  $('s-detect').textContent   = hasTests()
+    ? Math.round(catchRate() * 100) + '% of defects caught'
+    : 'no tests — nothing is caught';
   $('phase').textContent      = phaseName();
   $('f-stats').textContent    = state.incidents + ' incident' + (state.incidents === 1 ? '' : 's') +
                                 ' · ' + fmt(state.usersLost) + ' users lost' +
@@ -1404,16 +1514,30 @@ function render() {
   $('tile-bugs').style.display = state.monitoring ? '' : 'none';
   if (state.monitoring) $('s-bugs').textContent = fmt(state.bugs);
 
+  // agents: a running count, not a log line per feature
+  const strip = $('agentstrip');
+  if (state.agents > 0) {
+    strip.style.display = '';
+    strip.innerHTML =
+      '<span><b>' + state.agents + '</b> agent' + (state.agents === 1 ? '' : 's') +
+        ' · every ' + agentInterval().toFixed(1) + 's</span>' +
+      '<span><b>' + fmt(state.agentFeatures) + '</b> features shipped</span>' +
+      (state.monitoring
+        ? '<span class="bad">' + fmt(state.agentBugs) + ' defects introduced</span>'
+        : '<span style="color:var(--dimmer)">defects unknown</span>');
+  } else strip.style.display = 'none';
+
   renderStage();
 
   const p = $('prompt');
   $('promptrow').classList.toggle('alarm', !!state.incident && !b);
   $('promptrow').classList.toggle('idle', !!b);
-  p.placeholder = b                ? 'the pipeline is busy — use the card above'
-                : state.incident   ? 'paste the error message above, then press Enter'
-                                   : 'add dark mode to the settings page';
+  p.placeholder = b              ? 'the pipeline is busy — use the card above'
+                : state.incident ? 'paste the error message above, then press Enter'
+                : state.quickAdd ? 'press Enter, or type /add'
+                                 : '/add';
 
-  let enterDoes = 'build it';
+  let enterDoes = state.quickAdd ? 'build a feature' : 'run /add';
   if (b && b.stage === 'perm')          enterDoes = 'allow';
   else if (b && b.stage === 'review')   enterDoes = 'approve';
   else if (b && b.stage === 'red')      enterDoes = 'fix the build';
@@ -1424,9 +1548,11 @@ function render() {
 
   $('hintlabel').innerHTML = (state.incident && !b)
     ? '<span style="color:var(--bad)">Production is down.</span> A fix must be written and deployed.'
-    : '<kbd>Enter</kbd> → ' + enterDoes;
+    : (b || state.quickAdd)
+      ? '<kbd>Enter</kbd> → ' + enterDoes
+      : 'Type <code>/add</code> and press <kbd>Enter</kbd> to build a feature.';
 
-  const manual = [!state.autoAccept && 'review', !state.ci && 'red-build',
+  const manual = [!state.autoAccept && 'review', hasTests() && !state.ci && 'red-build',
                   !state.cd && 'deploy'].filter(Boolean).length;
   $('statuslabel').textContent = 'think ' + thinkTime().toFixed(1) + 's · deploy ' +
     deployTime().toFixed(1) + 's · ' +
@@ -1451,23 +1577,42 @@ function render() {
   fb.disabled = !!b || !!state.incident || state.bugs <= 0;
   fb.textContent = state.bugs > 0 ? 'Fix a bug (' + fmt(state.bugs) + ' open)' : 'No known bugs';
 
-  // tile affordability + live tooltip refresh
-  for (const n of allNodes()) {
-    const el = $('tile-' + n.id);
-    if (!el) continue;
-    if (!(spent(n) || isMaxed(n))) {
-      el.classList.toggle('poor', state.cash < costOf(n));
-      const c = el.querySelector('.tcost');
-      if (c) c.textContent = money(costOf(n)) + (n.repeat && n.count ? ' · ×' + n.count : '');
+  // how many skills are affordable right now — surfaced on the inactive tab
+  let affordable = 0;
+  for (const n of allNodes()) if (buyable(n)) affordable++;
+  const badge = $('tab-badge');
+  if (affordable > 0 && view !== 'skills') {
+    badge.style.display = ''; badge.textContent = affordable;
+  } else badge.style.display = 'none';
+
+  if (view === 'skills') {
+    for (const n of allNodes()) {
+      const el = $('tile-' + n.id);
+      if (!el) continue;
+      if (!(spent(n) || isMaxed(n))) {
+        el.classList.toggle('poor', state.cash < costOf(n));
+        const c = el.querySelector('.tcost');
+        if (c) c.textContent = money(costOf(n)) + (n.repeat && n.count ? ' · ×' + n.count : '');
+      }
+      if (tipFor === n.id) showTip(n, el);
     }
-    if (tipFor === n.id) showTip(n, el);
+    $('tree-meta').textContent = allNodes().reduce((s, n) => s + (n.count || 0), 0) + ' unlocked';
   }
-  $('tree-meta').textContent = allNodes().reduce((s, n) => s + (n.count || 0), 0) + ' unlocked';
 }
 
 /* ==========================================================================
-   TUNING
+   TUNING PANEL
    ========================================================================== */
+function configAsCode() {
+  const w = Math.max.apply(null, Object.keys(DEFAULTS).map(k => k.length));
+  const lines = Object.keys(DEFAULTS).map(k => {
+    const v = CONFIG[k];
+    const s = Number.isInteger(v) ? String(v) : String(v);
+    return '  ' + (k + ':').padEnd(w + 2) + ' ' + s + ',';
+  });
+  return 'const CONFIG = {\n' + lines.join('\n') + '\n};';
+}
+
 function renderTuning() {
   const box = $('tuning');
   box.innerHTML = '';
@@ -1492,7 +1637,9 @@ function renderTuning() {
       if (t.max !== undefined) c = Math.min(t.max, c);
       inp.classList.toggle('invalid', c !== v);
       CONFIG[t.key] = c;
+      saveConfig();
       renderTree();
+      updateSaveState();
     });
     row.append(lab, inp);
     grid.appendChild(row);
@@ -1500,22 +1647,70 @@ function renderTuning() {
 
   const note = document.createElement('div');
   note.className = 'tunenote';
-  note.textContent = 'Every value applies immediately. Skills store multipliers rather than ' +
-    'fixed numbers, so changing a base value re-derives everything already unlocked. ' +
-    'Reset restarts the run but keeps your tuning.';
+  note.innerHTML =
+    'Every value applies immediately. Skills store multipliers rather than fixed numbers, ' +
+    'so changing a base value re-derives everything already unlocked. Reset restarts the run ' +
+    'but keeps your tuning.<br><b>Autosaved to this browser</b> — a refresh keeps your edits. ' +
+    'To make them permanent for everyone, use <b>Copy as code</b> and paste the block over ' +
+    '<b>const CONFIG</b> in index.html.';
 
   const acts = document.createElement('div');
   acts.className = 'actions';
+
+  const exp = document.createElement('button');
+  exp.className = 'btn pri';
+  exp.textContent = 'Copy as code';
+  exp.onclick = async () => {
+    const ta = $('export');
+    ta.style.display = 'block';
+    ta.value = configAsCode();
+    ta.select();
+    let copied = false;
+    try { await navigator.clipboard.writeText(ta.value); copied = true; }
+    catch (e) { try { copied = document.execCommand('copy'); } catch (e2) { copied = false; } }
+    exp.textContent = copied ? 'Copied — paste over const CONFIG' : 'Select the text below and copy';
+    setTimeout(() => { exp.textContent = 'Copy as code'; }, 2600);
+  };
+
   const rst = document.createElement('button');
   rst.className = 'btn';
   rst.textContent = 'Restore defaults';
   rst.onclick = () => {
     Object.assign(CONFIG, DEFAULTS);
+    clearConfig();
+    $('export').style.display = 'none';
     renderTuning(); renderTree();
-    log('Tuning restored to defaults.', 'note');
+    log('Tuning restored to defaults, saved copy cleared.', 'note');
   };
-  acts.appendChild(rst);
-  box.append(grid, note, acts);
+
+  acts.append(exp, rst);
+
+  const ta = document.createElement('textarea');
+  ta.id = 'export'; ta.readOnly = true; ta.spellcheck = false;
+
+  const sv = document.createElement('div');
+  sv.id = 'savestate';
+
+  box.append(grid, note, acts, ta, sv);
+  updateSaveState();
+}
+
+function updateSaveState() {
+  const el = $('savestate');
+  if (!el) return;
+  const changed = Object.keys(DEFAULTS).filter(k => CONFIG[k] !== DEFAULTS[k]).length;
+  if (!storageOK) {
+    el.style.color = 'var(--bad)';
+    el.textContent = 'This browser blocks localStorage on file:// — edits will not survive a ' +
+                     'refresh. Use Copy as code to keep them.';
+  } else if (changed) {
+    el.style.color = 'var(--accent)';
+    el.textContent = changed + ' value' + (changed === 1 ? '' : 's') +
+                     ' changed from default · saved to this browser';
+  } else {
+    el.style.color = 'var(--dimmer)';
+    el.textContent = 'All values at default.';
+  }
 }
 
 /* ==========================================================================
@@ -1523,8 +1718,25 @@ function renderTuning() {
    ========================================================================== */
 const promptEl = $('prompt');
 
+$('tab-game').onclick   = () => setView('game');
+$('tab-skills').onclick = () => setView('skills');
+
 document.addEventListener('keydown', e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+  const inPrompt = document.activeElement === promptEl;
+
+  /* 1 / 2 switch pages. Ignored mid-typing so they can still be typed into
+     the prompt once it has content. */
+  if ((e.key === '1' || e.key === '2') && !(inPrompt && promptEl.value.length)) {
+    e.preventDefault();
+    setView(e.key === '1' ? 'game' : 'skills');
+    return;
+  }
+
+  if (e.key === 'Escape' && inPrompt) { promptEl.blur(); return; }
+  if (view !== 'game') return;
+
   const b = state.build;
   const waiting = b && ['perm','review','red','deploy','fixready'].includes(b.stage);
 
@@ -1554,7 +1766,9 @@ $('copybtn').onclick = async () => {
     const ta = document.createElement('textarea');
     ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
     document.body.appendChild(ta); ta.select();
-    const ok = document.execCommand('copy'); ta.remove();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove();
     if (ok) done();
     else {
       $('copybtn').textContent = 'Select the text and copy it';
@@ -1584,7 +1798,7 @@ resetBtn.onclick = () => {
   state = freshState();
   tree = makeTree();
   logEl.innerHTML = '';
-  histEl.innerHTML = '<div class="h-empty">No history yet. Describe a feature and press Enter.</div>';
+  histEl.innerHTML = '<div class="h-empty">No history yet. Type <b>/add</b> and press Enter.</div>';
   lastKey = ''; stageKey = ''; hideTip();
   renderTree(); render();
   log('Fresh repo. Good luck.', 'note');
@@ -1610,10 +1824,13 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+const restored = loadConfig();
 renderTuning();
 renderTree();
+setView('game');
 render();
-log('You have an app. It has no users. Ship something.', 'note');
+log('You have an app. It has no users. Type <b>/add</b> to ship something.', 'note');
+if (restored) log('Loaded your saved tuning from this browser.', 'note');
 promptEl.focus();
 requestAnimationFrame(frame);
 </script>
