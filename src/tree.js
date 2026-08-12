@@ -8,6 +8,17 @@
    and `maxed()` if it can bottom out against a floor.
 
    apply() must only ever adjust modifiers on `state`, never absolute values.
+
+   LAYOUT
+   Each node carries x/y grid coordinates, hand-placed rather than computed so
+   the map has a deliberate shape. The seven branch roots sit in a ring around
+   the origin and each chain radiates outward from its own root, which is what
+   makes the graph grow away from the centre as skills are bought.
+   Coordinates are in cells; render.js scales them to pixels.
+
+   `req` may name a node in another branch — Continuous integration needs both
+   Command allowlist and Unit tests — so the map is a real graph with
+   convergences, not seven separate chains.
    ========================================================================== */
 
 import { CONFIG } from './config.js';

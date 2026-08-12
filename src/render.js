@@ -12,8 +12,12 @@ import {
 import { TIMED_STAGES } from './pipeline.js';
 import { goalProgress } from './ending.js';
 import {
-  tree, allNodes, owned, isMaxed, spent, costOf, buyable, visible, missing,
+  tree, allNodes, nodeById, reqsOf, owned, isMaxed, spent, costOf, buyable,
+  visible, missing,
 } from './tree.js';
+import {
+  POSITIONS, BRANCH_COLORS, CELL_X, CELL_Y, ZOOM_MIN, ZOOM_MAX, ZOOM_START,
+} from './layout.js';
 
 export let view = 'game';
 
@@ -25,6 +29,9 @@ export function setView(v) {
   $('tab-skills').classList.toggle('on', v === 'skills');
   hideTip();
   if (v === 'game') $('prompt').focus();
+  /* The map cannot be measured while hidden, so the first framing happens the
+     first time it is actually shown. */
+  if (v === 'skills' && !viewInit) recenterTree();
 }
 
 /* ==========================================================================
@@ -172,10 +179,13 @@ export function showTip(n, el) {
   positionTip(el);
 }
 
-function showMoreTip(count, el) {
-  tipFor = 'more';
-  $('tip').innerHTML = '<span class="tt">' + count + ' more to come</span>' +
-    '<div class="td">Locked skills appear here as you buy the ones before them.</div>';
+/* A "?" stub: says what to buy to reveal it, never what it is. */
+export function showLockedTip(n, el) {
+  tipFor = 'stub-' + n.id;
+  const lock = missing(n);
+  $('tip').innerHTML = '<span class="tt">Locked</span>' +
+    '<div class="td">Something unlocks here.</div>' +
+    (lock.length ? '<div class="tw">Needs ' + esc(lock.join(' + ')) + '</div>' : '');
   positionTip(el);
 }
 
@@ -193,61 +203,181 @@ function positionTip(el) {
 
 export function hideTip() { tipFor = null; $('tip').classList.remove('on'); }
 
+/* ==========================================================================
+   The map.
+
+   Nodes are absolutely positioned from layout.js coordinates; edges are SVG
+   lines between them. Only nodes whose prerequisites are owned are drawn — an
+   owned skill with a hidden next step gets a "?" stub instead, so the map shows
+   WHERE it continues without giving away what is there.
+
+   Pan and zoom live in module scope so a purchase can rebuild the DOM without
+   throwing away the player's view.
+   ========================================================================== */
+const PAD_X = 1400, PAD_Y = 1000;    // canvas origin, so negative cells fit
+let panX = 0, panY = 0, zoom = ZOOM_START, viewInit = false;
+
+export const treeFramed = () => viewInit;
+
+const cellToPx = p => ({ x: PAD_X + p.x * CELL_X, y: PAD_Y + p.y * CELL_Y });
+const branchOf  = n => tree.find(b => b.nodes.includes(n));
+const colorOf   = n => BRANCH_COLORS[branchOf(n).branch] || 'var(--accent)';
+
+function applyTransform() {
+  $('treecanvas').style.transform =
+    'translate(' + panX.toFixed(1) + 'px,' + panY.toFixed(1) + 'px) scale(' + zoom.toFixed(3) + ')';
+}
+
+/* Put the centre of what is currently drawn in the middle of the viewport.
+   Returns false while the panel is hidden, since it has no measurable size
+   then — setView retries once the map is actually on screen. */
+export function recenterTree(resetZoom = false) {
+  const wrap = $('treewrap');
+  if (!wrap.clientWidth) return false;
+  if (resetZoom) zoom = ZOOM_START;
+
+  const shown = allNodes().filter(visible).map(n => cellToPx(POSITIONS[n.id]));
+  const pts = shown.length ? shown : [{ x: PAD_X, y: PAD_Y }];
+  // include the hub so an early, one-sided frontier still frames the middle
+  pts.push({ x: PAD_X, y: PAD_Y });
+  const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+  const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+  panX = wrap.clientWidth  / 2 - cx * zoom;
+  panY = wrap.clientHeight / 2 - cy * zoom;
+  applyTransform();
+  viewInit = true;
+  return true;
+}
+
+export function setZoom(z, originX, originY) {
+  const wrap = $('treewrap');
+  const ox = originX === undefined ? wrap.clientWidth  / 2 : originX;
+  const oy = originY === undefined ? wrap.clientHeight / 2 : originY;
+  const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+  // keep the point under the cursor fixed while scaling
+  panX = ox - (ox - panX) * (next / zoom);
+  panY = oy - (oy - panY) * (next / zoom);
+  zoom = next;
+  applyTransform();
+}
+
+export const getZoom = () => zoom;
+export function panBy(dx, dy) { panX += dx; panY += dy; applyTransform(); }
+export function setGrabbing(on) { $('treewrap').classList.toggle('grabbing', on); }
+
+function renderLegend() {
+  $('treelegend').innerHTML = tree.map(b =>
+    '<span><i style="background:' + BRANCH_COLORS[b.branch] + '"></i>' + b.branch + '</span>'
+  ).join('');
+}
+
 export function renderTree(onBuy) {
-  const box = $('tree');
-  box.innerHTML = '';
+  const nodesBox = $('treenodes');
+  const svg = $('treeedges');
+  nodesBox.innerHTML = '';
+  svg.innerHTML = '';
+  svg.setAttribute('width', PAD_X * 2);
+  svg.setAttribute('height', PAD_Y * 2);
 
-  for (const br of tree) {
-    const row = document.createElement('div');
-    row.className = 'brow';
-    row.innerHTML = '<div class="blabel">' + br.branch + '<span>' + br.note + '</span></div>';
-
-    const tiles = document.createElement('div');
-    tiles.className = 'btiles';
-
-    let hidden = 0;
-    for (const n of br.nodes) {
-      if (!visible(n)) { hidden++; continue; }
-
-      /* `done` means nothing more can be bought here. A repeatable you already
-         own is NOT done — it must keep looking clickable, or the affordable
-         count on the tab points at tiles that look finished. */
-      const done = spent(n) || isMaxed(n);
-      const el = document.createElement(done ? 'div' : 'button');
-      el.className = 'tile' + (done ? ' own' : '') +
-        (!done && owned(n) ? ' stacked' : '') +
-        (!done && state.cash < costOf(n) ? ' poor' : '') +
-        (n.warn && !owned(n) ? ' warnish' : '');
-      el.id = 'tile-' + n.id;
-
-      const right = spent(n) ? 'owned'
-                  : isMaxed(n) ? (owned(n) ? 'maxed ×' + n.count : 'maxed')
-                  : money(costOf(n)) + (n.repeat && n.count ? '  ·  ×' + n.count : '');
-
-      el.innerHTML = '<span class="tname">' + esc(n.name) + '</span>' +
-                     '<span class="tcost">' + right + '</span>';
-
-      el.addEventListener('mouseenter', () => showTip(n, el));
-      el.addEventListener('mouseleave', hideTip);
-      el.addEventListener('focus',      () => showTip(n, el));
-      el.addEventListener('blur',       hideTip);
-      if (!done) el.onclick = () => onBuy(n);
-
-      tiles.appendChild(el);
+  /* ---- edges first, so nodes sit on top ---- */
+  for (const n of allNodes()) {
+    if (!visible(n)) continue;
+    const to = cellToPx(POSITIONS[n.id]);
+    for (const rid of reqsOf(n)) {
+      const parent = nodeById(rid);
+      if (!parent || !visible(parent)) continue;
+      const from = cellToPx(POSITIONS[rid]);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
+      line.setAttribute('x2', to.x);   line.setAttribute('y2', to.y);
+      line.setAttribute('stroke', colorOf(n));
+      line.setAttribute('stroke-width', owned(n) ? 2 : 1.5);
+      line.setAttribute('stroke-opacity', owned(n) ? 0.7 : 0.22);
+      if (!owned(n)) line.setAttribute('stroke-dasharray', '5 5');
+      svg.appendChild(line);
     }
-
-    if (hidden > 0) {
-      const more = document.createElement('span');
-      more.className = 'tile more';
-      more.textContent = '+' + hidden;
-      more.addEventListener('mouseenter', () => showMoreTip(hidden, more));
-      more.addEventListener('mouseleave', hideTip);
-      tiles.appendChild(more);
-    }
-
-    row.appendChild(tiles);
-    box.appendChild(row);
   }
+
+  /* ---- the hub ---- */
+  const hub = document.createElement('div');
+  hub.className = 'hub';
+  hub.style.left = PAD_X + 'px';
+  hub.style.top  = PAD_Y + 'px';
+  hub.textContent = 'your app';
+  nodesBox.appendChild(hub);
+
+  /* ---- nodes ---- */
+  for (const n of allNodes()) {
+    const pos = POSITIONS[n.id];
+    if (!pos) continue;
+    const px = cellToPx(pos);
+
+    if (!visible(n)) {
+      /* Draw a "?" only when a prerequisite is already owned, so the map hints
+         at its own edges without revealing anything. */
+      const anyParentOwned = reqsOf(n).some(id => owned(nodeById(id)));
+      if (!anyParentOwned) continue;
+
+      const stub = document.createElement('button');
+      stub.className = 'stub';
+      stub.id = 'stub-' + n.id;
+      stub.textContent = '?';
+      stub.style.left = px.x + 'px';
+      stub.style.top  = px.y + 'px';
+      stub.addEventListener('mouseenter', () => showLockedTip(n, stub));
+      stub.addEventListener('mouseleave', hideTip);
+      nodesBox.appendChild(stub);
+
+      for (const rid of reqsOf(n)) {
+        const parent = nodeById(rid);
+        if (!parent || !owned(parent)) continue;
+        const from = cellToPx(POSITIONS[rid]);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
+        line.setAttribute('x2', px.x);   line.setAttribute('y2', px.y);
+        line.setAttribute('stroke', '#3d3d46');
+        line.setAttribute('stroke-width', 1);
+        line.setAttribute('stroke-dasharray', '3 6');
+        svg.appendChild(line);
+      }
+      continue;
+    }
+
+    /* `done` means nothing more can be bought here. A repeatable you already
+       own is NOT done — it must keep reading as clickable, or the affordable
+       count on the tab points at tiles that look finished. */
+    const done = spent(n) || isMaxed(n);
+    const el = document.createElement(done ? 'div' : 'button');
+    const color = colorOf(n);
+    el.className = 'tile' + (done ? ' own' : '') +
+      (!done && owned(n) ? ' stacked' : '') +
+      (!done && state.cash < costOf(n) ? ' poor' : ' ready') +
+      (n.warn && !owned(n) ? ' warnish' : '');
+    el.id = 'tile-' + n.id;
+    el.style.left = px.x + 'px';
+    el.style.top  = px.y + 'px';
+    el.style.borderColor = color;
+    el.style.color = color;                      // drives the hover glow
+
+    const right = spent(n) ? 'owned'
+                : isMaxed(n) ? (owned(n) ? 'maxed ×' + n.count : 'maxed')
+                : money(costOf(n)) + (n.repeat && n.count ? '  ·  ×' + n.count : '');
+
+    el.innerHTML = '<span class="tname" style="color:var(--text)">' + esc(n.name) + '</span>' +
+                   '<span class="tcost">' + right + '</span>';
+
+    el.addEventListener('mouseenter', () => showTip(n, el));
+    el.addEventListener('mouseleave', hideTip);
+    el.addEventListener('focus',      () => showTip(n, el));
+    el.addEventListener('blur',       hideTip);
+    if (!done) el.onclick = () => onBuy(n);
+
+    nodesBox.appendChild(el);
+  }
+
+  renderLegend();
+  if (!viewInit) recenterTree();     // sets viewInit itself once it can measure
+  else applyTransform();
 }
 
 /* ==========================================================================
@@ -353,13 +483,17 @@ export function render(onAction) {
       const el = $('tile-' + n.id);
       if (!el) continue;
       if (!(spent(n) || isMaxed(n))) {
-        el.classList.toggle('poor', state.cash < costOf(n));
+        const broke = state.cash < costOf(n);
+        el.classList.toggle('poor', broke);
+        el.classList.toggle('ready', !broke);
         const c = el.querySelector('.tcost');
         if (c) c.textContent = money(costOf(n)) + (n.repeat && n.count ? '  ·  ×' + n.count : '');
       }
       if (tipFor === n.id) showTip(n, el);
     }
-    $('tree-meta').textContent = allNodes().reduce((s, n) => s + (n.count || 0), 0) + ' unlocked';
+    const total = allNodes().length;
+    const own = allNodes().filter(owned).length;
+    $('tree-meta').textContent = own + ' of ' + total + ' unlocked';
   }
 }
 

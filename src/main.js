@@ -16,7 +16,9 @@ import { checkEnding } from './ending.js';
 import {
   render, renderTree, renderStage, resetStageKey, setView, view,
   hideTip, renderEnding, hideEnding,
+  recenterTree, setZoom, getZoom, panBy, setGrabbing, treeFramed,
 } from './render.js';
+import { layoutProblems } from './layout.js';
 import { saveGame, loadGame, wipeSave, hasSave, autosaveTick, describeAge, storageOK } from './save.js';
 
 /* Clear the file:// fallback notice. The timer in index.html may already have
@@ -30,11 +32,14 @@ if (bootfail) bootfail.style.display = 'none';
    Config problems are a hard stop — a readable list beats a NaN economy
    ========================================================================== */
 function reportConfigProblems() {
-  if (!configProblems.length) return false;
+  /* Layout gaps are the same class of mistake as a config typo — a skill with
+     no coordinates would silently vanish from the map — so they report here. */
+  const problems = configProblems.concat(layoutProblems(allNodes().map(n => n.id)));
+  if (!problems.length) return false;
   const el = $('configerr');
   el.style.display = 'block';
-  el.innerHTML = '<b>config.js needs fixing</b> — the game is not running.<ul>' +
-    configProblems.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul>';
+  el.innerHTML = '<b>Config needs fixing</b> — the game is not running.<ul>' +
+    problems.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul>';
   return true;
 }
 
@@ -149,6 +154,75 @@ document.addEventListener('keydown', e => {
 });
 
 window.addEventListener('scroll', hideTip, { passive: true });
+
+/* ---- map: drag to pan, scroll to zoom -------------------------------------
+   Pointer events so a finger drag works the same as a mouse. A drag that moves
+   more than a few pixels swallows the click, so panning across the map never
+   buys the skill you happened to start on. */
+const wrap = $('treewrap');
+let dragging = false, dragMoved = 0, lastX = 0, lastY = 0, pointerId = null;
+
+wrap.addEventListener('pointerdown', e => {
+  if (e.button !== undefined && e.button !== 0) return;
+  /* The zoom/recenter buttons live inside the pan surface, so pressing one
+     would otherwise start a drag and then have its click swallowed. */
+  if (e.target.closest && e.target.closest('#treectl')) return;
+  dragging = true; dragMoved = 0; pointerId = e.pointerId;
+  lastX = e.clientX; lastY = e.clientY;
+  setGrabbing(true);
+  /* Capture keeps a fast drag from escaping the panel. It can throw if the
+     pointer is already gone, and losing it only costs us capture, not panning. */
+  try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+});
+
+wrap.addEventListener('pointermove', e => {
+  if (!dragging || e.pointerId !== pointerId) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  dragMoved += Math.abs(dx) + Math.abs(dy);
+  if (dragMoved > 3) hideTip();
+  panBy(dx, dy);
+});
+
+function endDrag() {
+  if (!dragging) return;
+  dragging = false;
+  setGrabbing(false);
+  if (pointerId !== null) {
+    try { wrap.releasePointerCapture(pointerId); } catch (err) { /* ignore */ }
+  }
+  pointerId = null;
+}
+wrap.addEventListener('pointerup', endDrag);
+wrap.addEventListener('pointercancel', endDrag);
+
+/* Suppress the click that ends a real drag, so panning across the map never
+   buys a skill. Capture phase, so it lands before the tile's own handler.
+   The controls are exempt: they never start a drag, so they never reset the
+   counter, and would otherwise eat their first click after every pan. */
+wrap.addEventListener('click', e => {
+  if (e.target.closest && e.target.closest('#treectl')) return;
+  if (dragMoved > 4) { e.stopPropagation(); e.preventDefault(); dragMoved = 0; }
+}, true);
+
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = wrap.getBoundingClientRect();
+  const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+  setZoom(getZoom() * factor, e.clientX - r.left, e.clientY - r.top);
+}, { passive: false });
+
+$('zoomin').onclick    = () => setZoom(getZoom() * 1.18);
+$('zoomout').onclick   = () => setZoom(getZoom() / 1.18);
+$('recenter').onclick  = () => recenterTree(true);   // reset framing AND zoom
+
+/* The map cannot be framed until it has a measurable width, which may be a
+   frame or two after the panel first becomes visible. Watch for that rather
+   than guessing when it happens. */
+if (typeof ResizeObserver !== 'undefined') {
+  new ResizeObserver(() => { if (!treeFramed()) recenterTree(); }).observe(wrap);
+}
+window.addEventListener('resize', () => { if (!treeFramed()) recenterTree(); });
 
 $('fixbtn').onclick = () => { fixBug(); promptEl.focus(); };
 
