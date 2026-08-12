@@ -8,11 +8,9 @@
    Sections are for reading only: the game flattens them into one object at
    boot, so a key must not appear in two sections, and every key listed here
    must exist or the game will tell you which one is missing.
-
-   Loaded as a plain script so this works from a file:// page with no server.
    ========================================================================== */
 
-window.GAME_CONFIG = {
+export default {
 
   /* ------------------------------------------------------------------------
      GROWTH — how users arrive and what they are worth
@@ -54,6 +52,10 @@ window.GAME_CONFIG = {
      TESTING — the chance a defect is caught before it reaches users
      Zero until Unit tests is owned. Tests do not improve the code, they only
      make defects visible before deploy.
+
+     Agent-shipped features skip your pipeline, so they are only screened once
+     Continuous integration is owned — that is what makes CI the skill that
+     lets automation scale instead of burying you.
      ------------------------------------------------------------------------ */
   testing: {
     CATCH_RATE_UNIT:          0.70,   // Unit tests
@@ -125,6 +127,51 @@ window.GAME_CONFIG = {
     STUBBORN_CHANCE:          0.15,
     STUBBORN_DEPLOYS_MIN:     2,
     STUBBORN_DEPLOYS_MAX:     3,
+
+    // Share of open bugs cleared when an incident is finally resolved (always
+    // at least one). An outage makes you fix the underlying class of problem,
+    // not just the one symptom.
+    //
+    // This is the negative feedback that keeps the game playable: shipping
+    // creates roughly 0.4 defects per feature while an incident removes only
+    // one, so without this bugs grow without bound from the first minute, the
+    // incident rate grows with them, and production ends up down two thirds of
+    // the time — long before the late-game tools below are affordable. Raising
+    // this makes outages more forgiving; dropping it toward 0 restores the
+    // death spiral.
+    INCIDENT_BUG_CLEAR_FRACTION: 0.25,
+
+    // Seconds per bug cleared by one level of Auto-remediation — a late-game
+    // sink that scales with investment rather than with outages.
+    REMEDIATION_INTERVAL:     8.0,
+  },
+
+  /* ------------------------------------------------------------------------
+     ENDING — where the demo stops
+
+     Features shipped is the goal because it only ever goes up; users churn.
+
+     Measured rather than guessed: a simulated run buying sensibly reaches
+     ~1,550 features around the time the last skill is bought (roughly 30
+     minutes in), and a fully-upgraded player then ships ~116 more in 30
+     seconds — 33 by hand plus ~83 from agents. So the goal sits one final
+     sprint past the last purchase.
+
+     Raise it for a longer sandbox tail; lower it to end nearer the moment the
+     tree is complete.
+     ------------------------------------------------------------------------ */
+  ending: {
+    ENDING_FEATURES:       1700,
+  },
+
+  /* ------------------------------------------------------------------------
+     SAVING
+     ------------------------------------------------------------------------ */
+  saving: {
+    // How often the run is written to this browser's storage, in seconds.
+    // Time does not pass while the tab is closed — there is no offline
+    // progress, by design.
+    AUTOSAVE_INTERVAL:        5.0,
   },
 
 };

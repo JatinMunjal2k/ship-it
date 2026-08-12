@@ -9,3 +9,6 @@
 # editor directories
 .vscode/
 .idea/
+
+# local dev server config
+.claude/

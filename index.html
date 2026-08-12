@@ -39,6 +39,21 @@
 
   .wrap { max-width: 1160px; margin: 0 auto; padding: 20px; }
 
+  /* ---------- boot failure / config errors ---------- */
+  #bootfail, #configerr {
+    display: none; margin: 16px 0 0; padding: 12px 14px;
+    border: 1px solid var(--bad); border-radius: 6px;
+    background: rgba(229,72,77,0.08); color: var(--text); font-size: 12px;
+  }
+  #bootfail b, #configerr b { color: var(--bad); }
+  #bootfail code, #configerr code { color: var(--warn); }
+  #bootfail pre {
+    margin: 8px 0 0; padding: 8px 10px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 4px;
+    color: var(--good); overflow-x: auto; user-select: all;
+  }
+  #configerr ul { margin: 8px 0 0; padding-left: 20px; color: var(--dim); }
+
   /* ---------- header ---------- */
   header {
     display: flex; align-items: baseline; gap: 12px;
@@ -116,7 +131,6 @@
   #history .h-res.pending { color: var(--dimmer); }
   #history .h-empty { color: var(--dimmer); }
 
-  /* agent throughput — a count, never a per-feature log line */
   #agentstrip {
     padding: 7px 12px; border-top: 1px solid var(--border);
     background: #101013; font-size: 11px; color: var(--dim);
@@ -124,6 +138,7 @@
   }
   #agentstrip b { color: var(--text); font-weight: 600; }
   #agentstrip .bad { color: var(--bad); }
+  #agentstrip .ok  { color: var(--good); }
 
   /* ---------- pipeline stage card ---------- */
   #stage { margin: 12px 14px 0; }
@@ -203,7 +218,7 @@
     font-size: 11px; color: var(--dimmer); margin-top: 8px;
     display: flex; justify-content: space-between; gap: 10px;
   }
-  .hint kbd, kbd.k {
+  .hint kbd {
     background: var(--panel-2); border: 1px solid var(--border);
     border-radius: 3px; padding: 1px 5px; font: inherit; font-size: 10px; color: var(--dim);
   }
@@ -243,7 +258,7 @@
   #log .fix      { color: var(--good); }
   #log .note     { color: var(--warn); }
 
-  /* ---------- skill tree page ---------- */
+  /* ---------- skill tree ---------- */
   #tree { padding: 4px 0; }
   .brow {
     display: grid; grid-template-columns: 150px 1fr; gap: 16px;
@@ -291,15 +306,33 @@
   #tip .to { color: var(--accent); margin-top: 5px; font-size: 10.5px;
              text-transform: uppercase; letter-spacing: 0.5px; }
 
-  /* ---------- config load failure ---------- */
-  #configerr {
-    display: none; margin: 16px 0 0; padding: 12px 14px;
-    border: 1px solid var(--bad); border-radius: 6px;
-    background: rgba(229,72,77,0.08); color: var(--text); font-size: 12px;
+  /* ---------- ending ---------- */
+  #ending {
+    display: none; position: fixed; inset: 0; z-index: 400;
+    background: rgba(8,8,10,0.88); align-items: center; justify-content: center;
+    padding: 24px;
   }
-  #configerr b { color: var(--bad); }
-  #configerr code { color: var(--warn); }
-  #configerr ul { margin: 8px 0 0; padding-left: 20px; color: var(--dim); }
+  #ending .ecard {
+    background: var(--panel); border: 1px solid var(--accent); border-radius: 8px;
+    padding: 26px 28px; max-width: 460px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  #ending .etag {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  #ending h3 { margin: 0 0 8px; font-size: 20px; letter-spacing: -0.4px; }
+  #ending .elede { color: var(--dim); font-size: 12px; margin-bottom: 18px; line-height: 1.6; }
+  #ending .erow {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 5px 0; border-bottom: 1px solid #202026; font-size: 12px; color: var(--dim);
+  }
+  #ending .erow:last-of-type { border-bottom: none; }
+  #ending .erow b { color: var(--text); }
+  #ending .eacts { display: flex; gap: 8px; margin-top: 20px; }
+  #ending .ethanks {
+    margin-top: 16px; font-size: 11px; color: var(--dimmer); line-height: 1.6;
+  }
 
   footer {
     margin-top: 16px; display: flex; justify-content: space-between;
@@ -322,6 +355,14 @@
     <span class="phase" id="phase">Garage</span>
   </header>
 
+  <!-- shown only if the ES modules never boot, which on file:// they cannot -->
+  <div id="bootfail">
+    <b>The game could not start.</b> Browsers block ES modules on <code>file://</code>, so opening
+    this file directly will not work. Serve the folder instead — from this directory, run:
+    <pre>python3 -m http.server 8000</pre>
+    then open <code>http://localhost:8000</code>. The published version at
+    <code>jatinmunjal2k.github.io/ship-it</code> needs none of this.
+  </div>
   <div id="configerr"></div>
 
   <div class="tabs">
@@ -343,7 +384,7 @@
     <div class="stat">
       <div class="label">Features</div>
       <div class="value" id="s-features">0</div>
-      <div class="sub" id="s-agents">no agents</div>
+      <div class="sub" id="s-goal">goal 2.5K · 0%</div>
     </div>
     <div class="stat">
       <div class="label">Code Quality</div>
@@ -417,1272 +458,37 @@
   </footer>
 
 </div>
+
 <div id="tip"></div>
 
-<script src="config.js"></script>
+<div id="ending">
+  <div class="ecard">
+    <div class="etag">demo end</div>
+    <h3>Thanks for playing.</h3>
+    <div class="elede">
+      You automated every chore you started with. Shipping is one keypress again,
+      guarded by so much process that you can barely move — and all of it is
+      load-bearing. That is the joke, and it is also just the job.
+    </div>
+    <div id="end-stats"></div>
+    <div class="eacts">
+      <button class="btn pri" id="end-continue">Keep playing</button>
+      <button class="btn" id="end-restart">Start over</button>
+    </div>
+    <div class="ethanks">
+      This is a prototype. If you have thoughts — where you got bored, what you
+      expected to happen and didn't — those are the useful ones.
+    </div>
+  </div>
+</div>
+
 <script>
-"use strict";
-
-/* ==========================================================================
-   CONFIG — loaded from config.js, which is the only place to change balance.
-   config.js groups values into sections for readability; the game wants one
-   flat object, so we flatten here and check nothing is missing or duplicated.
-   A typo in config.js should say so on screen, not produce a NaN economy.
-   ========================================================================== */
-const REQUIRED_KEYS = [
-  'USERS_PER_FEATURE_MIN', 'USERS_PER_FEATURE_MAX', 'REVENUE_PER_USER', 'BASE_USER_CAP',
-  'BASE_QUALITY', 'RISKY_DIFF_CHANCE', 'RISKY_QUALITY_MULT',
-  'CATCH_RATE_UNIT', 'CATCH_RATE_INTEGRATION', 'CATCH_RATE_E2E',
-  'THINK_TIME_START', 'THINK_TIME_MIN', 'TEST_TIME', 'AUTOFIX_TIME', 'DEPLOY_TIME',
-  'PERMISSION_CHANCE', 'DANGEROUS_SHARE', 'DANGEROUS_USER_LOSS',
-  'AGENT_INTERVAL',
-  'INCIDENT_CHANCE_PER_BUG', 'INCIDENT_MIN_LOSS', 'INCIDENT_MAX_LOSS', 'INCIDENT_BLEED',
-  'REPAIR_TIME_START', 'REPAIR_TIME_MIN',
-  'STUBBORN_CHANCE', 'STUBBORN_DEPLOYS_MIN', 'STUBBORN_DEPLOYS_MAX',
-];
-
-/* Flatten the sectioned file into one object, collecting every problem rather
-   than stopping at the first, so one refresh tells you everything to fix. */
-function loadConfigFrom(src) {
-  const config = {}, problems = [], seenIn = {};
-
-  if (!src || typeof src !== 'object') {
-    return { config, problems: ['config.js did not load. It must sit next to index.html.'] };
-  }
-
-  for (const section in src) {
-    const group = src[section];
-    if (!group || typeof group !== 'object') {
-      problems.push('Section "' + section + '" is not an object.');
-      continue;
-    }
-    for (const key in group) {
-      if (key in config) {
-        problems.push('"' + key + '" appears in both "' + seenIn[key] + '" and "' +
-                      section + '". Keep it in one section.');
-        continue;
-      }
-      const v = group[key];
-      if (typeof v !== 'number' || !Number.isFinite(v)) {
-        problems.push('"' + key + '" in "' + section + '" is not a finite number: ' + v);
-        continue;
-      }
-      config[key] = v;
-      seenIn[key] = section;
-    }
-  }
-
-  for (const k of REQUIRED_KEYS) {
-    if (!(k in config)) problems.push('"' + k + '" is missing from config.js.');
-  }
-  for (const k in config) {
-    if (REQUIRED_KEYS.indexOf(k) === -1) {
-      problems.push('"' + k + '" in config.js is not a setting the game reads.');
-    }
-  }
-
-  return { config, problems };
-}
-
-const CONFIG = {};
-const loaded = loadConfigFrom(window.GAME_CONFIG);
-const configProblems = loaded.problems;
-Object.assign(CONFIG, loaded.config);
-
-function reportConfigProblems() {
-  if (!configProblems.length) return false;
-  const el = document.getElementById('configerr');
-  el.style.display = 'block';
-  el.innerHTML = '<b>config.js needs fixing</b> — the game is not running.' +
-    '<ul>' + configProblems.map(p =>
-      '<li>' + p.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) + '</li>'
-    ).join('') + '</ul>';
-  return true;
-}
-
-/* ==========================================================================
-   STATE
-   ========================================================================== */
-function freshState() {
-  return {
-    users: 0, cash: 0, features: 0, bugs: 0,
-
-    qualityBonus: 0, capBonus: 0,
-    buildMult: 1, buildFlat: 0, repairMult: 1,
-    agentIntervalMult: 1, bleedMult: 1,
-    agents: 0, monitoring: false,
-
-    quickAdd:  false,   // Enter alone runs /add
-    autoAccept: false, allowlist: false, skipPerms: false, ci: false, cd: false,
-    testLevel: 0,       // 0 none, 1 unit, 2 integration, 3 e2e
-
-    agentTimer: 0, agentFeatures: 0, agentBugs: 0,
-    build: null, stashed: null, incident: null,
-
-    incidents: 0, usersLost: 0, disasters: 0, elapsed: 0,
-  };
-}
-let state = freshState();
-let view = 'game';
-
-/* ---- derived ---- */
-const quality       = () => Math.max(0, Math.min(0.99, CONFIG.BASE_QUALITY + state.qualityBonus));
-const userCap       = () => Math.max(1, CONFIG.BASE_USER_CAP + state.capBonus);
-const agentInterval = () => Math.max(0.05, CONFIG.AGENT_INTERVAL * state.agentIntervalMult);
-const thinkTime     = () => Math.max(CONFIG.THINK_TIME_MIN, CONFIG.THINK_TIME_START * state.buildMult)
-                            + state.buildFlat;
-const testTime      = () => Math.max(0.1, CONFIG.TEST_TIME    * state.buildMult);
-const autofixTime   = () => Math.max(0.1, CONFIG.AUTOFIX_TIME * state.buildMult);
-const deployTime    = () => Math.max(0.1, CONFIG.DEPLOY_TIME  * state.buildMult);
-const repairTime    = () => Math.max(CONFIG.REPAIR_TIME_MIN, CONFIG.REPAIR_TIME_START * state.repairMult);
-const bleedRate     = () => Math.max(0, CONFIG.INCIDENT_BLEED * state.bleedMult);
-
-const hasTests  = () => state.testLevel > 0;
-const catchRate = () => [0, CONFIG.CATCH_RATE_UNIT, CONFIG.CATCH_RATE_INTEGRATION,
-                         CONFIG.CATCH_RATE_E2E][state.testLevel] || 0;
-
-const atThinkFloor  = () => CONFIG.THINK_TIME_START  * state.buildMult  <= CONFIG.THINK_TIME_MIN  + 1e-9;
-const atRepairFloor = () => CONFIG.REPAIR_TIME_START * state.repairMult <= CONFIG.REPAIR_TIME_MIN + 1e-9;
-
-function usersPerFeature() {
-  const a = Math.floor(CONFIG.USERS_PER_FEATURE_MIN), b = Math.floor(CONFIG.USERS_PER_FEATURE_MAX);
-  const lo = Math.max(0, Math.min(a, b)), hi = Math.max(0, Math.max(a, b));
-  return lo + Math.floor(Math.random() * (hi - lo + 1));
-}
-
-/* ==========================================================================
-   SKILL TREE DATA — `req` may be a single id or a list of them
-   ========================================================================== */
-function makeTree() { return [
-
-  { branch:'Workflow', note:'deletes chores', nodes:[
-    { id:'w0', name:'Enter to build', cost:120,
-      desc:()=>'Enter alone runs /add. Stop typing the command every time.',
-      apply:()=>{ state.quickAdd = true; } },
-    { id:'w1', name:'Auto-accept edits', cost:250, req:'w0',
-      desc:()=>'Diffs stop waiting for your approval — including the risky ones.',
-      warn:'You stop screening. Risky diffs ship themselves.',
-      apply:()=>{ state.autoAccept = true; } },
-    { id:'w2', name:'Command allowlist', cost:600, req:'w1',
-      desc:()=>'Safe commands stop asking permission. Destructive ones still do.',
-      apply:()=>{ state.allowlist = true; } },
-    { id:'w3', name:'Continuous integration', cost:1400, req:['w2','t1'],
-      desc:()=>'Caught defects are repaired automatically. No red-build decision.',
-      apply:()=>{ state.ci = true; } },
-    { id:'w4', name:'Continuous delivery', cost:3000, req:'w3',
-      desc:()=>'Green builds and incident fixes deploy on their own. The '
-               + deployTime().toFixed(1) + 's rollout still happens.',
-      apply:()=>{ state.cd = true; } },
-    { id:'w5', name:'Skip permissions', cost:9000, req:'w4',
-      desc:()=>'Nothing ever asks again. Nothing.',
-      warn:'Destructive commands run unattended. You find out afterwards.',
-      apply:()=>{ state.skipPerms = true; } },
-  ]},
-
-  { branch:'Quality', note:'defect-free rate', nodes:[
-    { id:'q1', name:'Linter', cost:40,
-      desc:()=>'Code quality +4 points — fewer defects written in the first place.',
-      apply:()=>{ state.qualityBonus += 0.04; } },
-    { id:'q2', name:'Type checking', cost:130, req:'q1',
-      desc:()=>'Code quality +6 points.', apply:()=>{ state.qualityBonus += 0.06; } },
-    { id:'q3', name:'Code review', cost:1600, req:'q2',
-      desc:()=>'Code quality +9 points. Agents 35% slower.',
-      warn:'Adds +0.6s to every build, under the floor.',
-      apply:()=>{ state.qualityBonus += 0.09; state.buildFlat += 0.6;
-                  state.agentIntervalMult *= 1.35; } },
-    { id:'q4', name:'Fuzz testing', cost:6500, scale:1.55, repeat:true, req:'q3',
-      desc:()=>'Code quality +2 points. Now ' + (quality()*100).toFixed(0) + '%.',
-      apply:()=>{ state.qualityBonus += 0.02; },
-      maxed:()=>quality() >= 0.99 - 1e-9 },
-  ]},
-
-  { branch:'Testing', note:'catches defects', nodes:[
-    { id:'t1', name:'Unit tests', cost:340,
-      desc:()=>'Adds a test stage that catches ' + (CONFIG.CATCH_RATE_UNIT*100).toFixed(0) +
-               '% of defects before deploy. Until now nothing was catching them.',
-      warn:'Adds a stage. Shipping gets slower before it gets safer.',
-      apply:()=>{ state.testLevel = Math.max(state.testLevel, 1); } },
-    { id:'t2', name:'Integration tests', cost:900, req:'t1',
-      desc:()=>'Catch rate → ' + (CONFIG.CATCH_RATE_INTEGRATION*100).toFixed(0) + '%.',
-      apply:()=>{ state.testLevel = Math.max(state.testLevel, 2); } },
-    { id:'t3', name:'End-to-end tests', cost:4000, req:'t2',
-      desc:()=>'Catch rate → ' + (CONFIG.CATCH_RATE_E2E*100).toFixed(0) +
-               '%. Slow, flaky, worth it.',
-      apply:()=>{ state.testLevel = Math.max(state.testLevel, 3); } },
-  ]},
-
-  { branch:'Velocity', note:'stage timers', nodes:[
-    { id:'v1', name:'Touch typing', cost:25,
-      desc:()=>'Every build stage ×0.80.',
-      apply:()=>{ state.buildMult *= 0.80; }, maxed:atThinkFloor },
-    { id:'v2', name:'Prompt snippets', cost:180, req:'v1',
-      desc:()=>'Every build stage ×0.80.',
-      apply:()=>{ state.buildMult *= 0.80; }, maxed:atThinkFloor },
-    { id:'v3', name:'Parallel subagents', cost:900, req:'v2',
-      desc:()=>'Every build stage ×0.75.',
-      apply:()=>{ state.buildMult *= 0.75; }, maxed:atThinkFloor },
-    { id:'v4', name:'Context compaction', cost:3000, scale:1.6, repeat:true, req:'v3',
-      desc:()=>'Every build stage ×0.90. Think ' + thinkTime().toFixed(2) +
-               's, deploy ' + deployTime().toFixed(2) + 's.',
-      apply:()=>{ state.buildMult *= 0.90; }, maxed:atThinkFloor },
-  ]},
-
-  { branch:'Capacity', note:'user ceiling', nodes:[
-    { id:'c1', name:'Bigger box', cost:60, scale:1.7, repeat:true,
-      desc:()=>'+400 user capacity.', apply:()=>{ state.capBonus += 400; } },
-    { id:'c2', name:'Load balancer', cost:600, req:'c1',
-      desc:()=>'+2,000 user capacity.', apply:()=>{ state.capBonus += 2000; } },
-    { id:'c3', name:'Autoscaling', cost:3200, req:'c2',
-      desc:()=>'+8,000 user capacity.', apply:()=>{ state.capBonus += 8000; } },
-    { id:'c4', name:'Multi-region', cost:14000, scale:1.7, repeat:true, req:'c3',
-      desc:()=>'+30,000 user capacity.', apply:()=>{ state.capBonus += 30000; } },
-  ]},
-
-  { branch:'Automation', note:'ships itself', nodes:[
-    { id:'a1', name:'Background agent', cost:150, scale:1.6, repeat:true,
-      desc:()=>'One more agent shipping every ' + agentInterval().toFixed(1) +
-               's. Agents skip your pipeline entirely.',
-      apply:()=>{ state.agents += 1; } },
-    { id:'a2', name:'Agent teams', cost:1400, req:'a1',
-      desc:()=>'All agents ship 20% faster.',
-      apply:()=>{ state.agentIntervalMult *= 0.80; } },
-    { id:'a3', name:'Orchestrator', cost:5500, req:'a2',
-      desc:()=>'+3 agents, hired at once.', apply:()=>{ state.agents += 3; } },
-    { id:'a4', name:'Self-improving loop', cost:18000, scale:1.7, repeat:true, req:'a3',
-      desc:()=>'+5 agents. They write their own prompts now.',
-      apply:()=>{ state.agents += 5; } },
-  ]},
-
-  { branch:'Reliability', note:'incidents', nodes:[
-    { id:'r1', name:'Monitoring', cost:400,
-      desc:()=>'Reveals your open bug count. Unlocks manual bug fixing.',
-      apply:()=>{ state.monitoring = true; } },
-    { id:'r2', name:'Alerting', cost:900, req:'r1',
-      desc:()=>'Time to write an incident fix ×0.70.',
-      apply:()=>{ state.repairMult *= 0.70; }, maxed:atRepairFloor },
-    { id:'r3', name:'Runbooks', cost:2400, req:'r2',
-      desc:()=>'Fix-writing ×0.65. Now ' + repairTime().toFixed(2) + 's.',
-      apply:()=>{ state.repairMult *= 0.65; }, maxed:atRepairFloor },
-    { id:'r4', name:'On-call rotation', cost:6000, req:'r2',
-      desc:()=>'Churn while production is broken ×0.50.',
-      apply:()=>{ state.bleedMult *= 0.50; } },
-    { id:'r5', name:'Auto-remediation', cost:12000, scale:1.6, repeat:true, req:'r3',
-      desc:()=>'Fix-writing ×0.85.',
-      apply:()=>{ state.repairMult *= 0.85; }, maxed:atRepairFloor },
-  ]},
-
-]; }
-let tree = makeTree();
-
-const allNodes = () => tree.flatMap(b => b.nodes);
-const nodeById = id => allNodes().find(n => n.id === id);
-const reqsOf   = n => !n.req ? [] : (Array.isArray(n.req) ? n.req : [n.req]);
-const owned    = n => (n.count || 0) > 0;
-const isMaxed  = n => !!(n.maxed && n.maxed());
-const unlocked = n => reqsOf(n).every(id => owned(nodeById(id)));
-const missing  = n => reqsOf(n).filter(id => !owned(nodeById(id))).map(id => nodeById(id).name);
-const spent    = n => !n.repeat && owned(n);
-const costOf   = n => n.repeat ? Math.floor(n.cost * Math.pow(n.scale || 1.5, n.count || 0)) : n.cost;
-const buyable  = n => unlocked(n) && !spent(n) && !isMaxed(n) && state.cash >= costOf(n);
-const visible  = n => owned(n) || unlocked(n);
-
-/* ==========================================================================
-   FLAVOR
-   ========================================================================== */
-const FEATURES = [
-  "Added dark mode", "Refactored the auth service", "Bumped 41 dependencies",
-  "Fixed the fix for the fix", "Migrated to a new state library",
-  "Added a settings page nobody asked for", "Rewrote it in Rust (partially)",
-  "Deleted 4,000 lines of dead code", "Added telemetry", "Removed telemetry",
-  "Split the monolith", "Merged the microservices back",
-  "Introduced a feature flag", "Removed the feature flag",
-  "Made the button 2px rounder", "Added infinite scroll",
-  "Cached everything", "Invalidated the cache", "Added an onboarding flow",
-  "Renamed `data` to `payload`", "Added a loading spinner",
-  "Upgraded the design system", "Wrote a migration script",
-  "Added keyboard shortcuts", "Localized into three languages",
-];
-
-const FILES = [
-  "src/checkout/cart.tsx", "src/auth/session.ts", "src/api/gateway.ts",
-  "src/components/Button.tsx", "src/db/migrations/0042_users.sql",
-  "src/hooks/useUser.ts", "src/workers/email.ts", "src/lib/cache.ts",
-  "src/routes/settings.tsx", "src/state/reducers/orders.ts",
-];
-
-const RISKS = [
-  "touches 14 files across 3 services", "no test coverage on the changed paths",
-  "modifies the payments module", "rewrites the auth middleware",
-  "bundles an unrelated dependency bump", "deletes 200 lines with no explanation",
-  "changes a migration already applied in prod",
-];
-
-const SAFE_CMDS = [
-  "npm install", "rm -rf node_modules", "npx tsc --noEmit",
-  "git checkout -b feature/dark-mode", "mkdir -p src/components",
-  "cat package.json", "git commit -am \"wip\"", "npm run test -- --watch=false",
-  "pkill -f webpack", "curl https://registry.npmjs.org/react",
-  "git stash", "docker compose up -d",
-];
-
-const DANGER_CMDS = [
-  "psql -c 'DROP TABLE users;'", "git push --force origin main",
-  "kubectl delete namespace production", "aws s3 rm s3://prod-backups --recursive",
-  "psql -c \"UPDATE users SET plan = 'free';\"", "redis-cli FLUSHALL",
-];
-
-const BUGS = [
-  "Race condition in the payment flow", "Memory leak in the websocket handler",
-  "Off-by-one in pagination", "Unhandled null in the user profile",
-  "Infinite retry loop hammering the API", "Timezone bug (always the timezone)",
-  "N+1 query taking down the database", "Regex catastrophically backtracking",
-  "Stale cache serving deleted accounts", "Migration ran twice",
-  "Rate limiter rate-limiting itself", "Feature flag defaulted to on for everyone",
-  "Auth token never expiring", "Uncaught promise rejection in checkout",
-];
-
-const ERRORS = [
-  "TypeError: Cannot read properties of null (reading 'id') at UserProfile.render (profile.tsx:142)",
-  "FATAL: connection pool exhausted — 100/100 in use at db/pool.ts:88",
-  "RangeError: Maximum call stack size exceeded at normalize (reducers/cart.ts:31)",
-  "Error: ETIMEDOUT — upstream payments-api did not respond in 30000ms",
-  "PanicException: index out of bounds: len is 0 but index is 3 at render_grid",
-  "ReferenceError: featureFlags is not defined at bootstrap (main.js:9)",
-  "SequelizeUniqueConstraintError: duplicate key value violates users_email_key",
-  "OOMKilled: container exceeded memory limit 512Mi at worker-7c4f",
-  "Unhandled rejection: 429 Too Many Requests from rate-limiter at gateway.ts:204",
-  "AssertionError: expected checkout total 0 to be greater than 0 (orders.ts:57)",
-];
-
-const NOT_HELD = [
-  "The fix deployed clean. The error came back with a different stack.",
-  "That fixed a different bug. The original is still there.",
-  "Deployed. Production disagrees.",
-  "The rollback rolled forward. Still down.",
-];
-
-const pick = a => a[Math.floor(Math.random() * a.length)];
-const rint = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
-
-/* ==========================================================================
-   HELPERS
-   ========================================================================== */
-function fmt(n) {
-  n = Math.floor(n);
-  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
-  return String(n);
-}
-function money(n) {
-  if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
-  if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
-  return '$' + Math.floor(n);
-}
-const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-
-const histEl = $('history');
-function histPrompt(text) {
-  const empty = histEl.querySelector('.h-empty');
-  if (empty) empty.remove();
-  const you = document.createElement('div');
-  you.className = 'h-you';
-  you.innerHTML = '<span class="c">&gt;</span>' + esc(text);
-  const res = document.createElement('div');
-  res.className = 'h-res pending';
-  res.textContent = 'working…';
-  histEl.append(you, res);
-  while (histEl.children.length > 120) histEl.firstChild.remove();
-  histEl.scrollTop = histEl.scrollHeight;
-  return res;
-}
-function histPending(el, text) {
-  if (!el) return;
-  el.className = 'h-res pending';
-  el.textContent = text;
-  histEl.scrollTop = histEl.scrollHeight;
-}
-function histResolve(el, html) {
-  if (!el) return;
-  el.className = 'h-res';
-  el.innerHTML = html;
-  histEl.scrollTop = histEl.scrollHeight;
-}
-
-const logEl = $('log');
-function log(msg, cls) {
-  const d = document.createElement('div');
-  const mm = String(Math.floor(state.elapsed / 60)).padStart(2, '0');
-  const ss = String(Math.floor(state.elapsed % 60)).padStart(2, '0');
-  d.className = cls || '';
-  d.innerHTML = '<span class="t">' + mm + ':' + ss + '</span>' + msg;
-  logEl.prepend(d);
-  while (logEl.children.length > 80) logEl.lastChild.remove();
-}
-function flash(cls) {
-  document.body.classList.remove(cls);
-  void document.body.offsetWidth;
-  document.body.classList.add(cls);
-}
-
-/* ==========================================================================
-   THE PIPELINE
-     /add → think → [perm] → [review] → [test → [red] → [autofix]]
-                  → [deploy] → deploying → shipped
-   The test stage exists only once Unit tests is owned. Before that a defect
-   goes straight to production and you never see it happen.
-   ========================================================================== */
-let buildSeq = 0;
-
-function startBuild(text) {
-  const entry = histPrompt(text);
-  const total = thinkTime();
-
-  let perm = null;
-  if (Math.random() < CONFIG.PERMISSION_CHANCE) {
-    const danger = Math.random() < CONFIG.DANGEROUS_SHARE;
-    perm = { cmd: danger ? pick(DANGER_CMDS) : pick(SAFE_CMDS), danger, done: false };
-  }
-
-  state.build = {
-    id: ++buildSeq, kind: 'feature', stage: 'think', timer: total, total,
-    entry, perm, diff: null, defective: null,
-  };
-}
-
-function makeDiff() {
-  const risky = Math.random() < CONFIG.RISKY_DIFF_CHANCE;
-  return {
-    file: pick(FILES), add: rint(8, 240), del: rint(0, 90),
-    risky, reason: risky ? pick(RISKS) : null, name: pick(FEATURES),
-  };
-}
-
-const diffQuality = d => d && d.risky ? quality() * CONFIG.RISKY_QUALITY_MULT : quality();
-
-function resolvePermission(allow) {
-  const b = state.build;
-  if (!b || b.stage !== 'perm') return;
-  const p = b.perm;
-  p.done = true;
-
-  if (!allow) {
-    if (p.danger) {
-      histResolve(b.entry, '<span class="ok">Denied <code>' + esc(p.cmd) + '</code>. Good catch.</span>');
-      log('Denied <b>' + esc(p.cmd) + '</b> — disaster averted.', 'fix');
-    } else {
-      histResolve(b.entry, '<span class="warn">Denied <code>' + esc(p.cmd) +
-                           '</code>. Claude could not continue.</span>');
-    }
-    state.build = null;
-    return;
-  }
-
-  if (p.danger) {
-    state.disasters++;
-    const lost = Math.floor(state.users * CONFIG.DANGEROUS_USER_LOSS);
-    state.users -= lost;
-    state.usersLost += lost;
-    log('You approved <b>' + esc(p.cmd) + '</b>. <span style="color:var(--warn)">−' +
-        fmt(lost) + ' users.</span> It ran instantly and completely.', 'oops');
-    flash('oops');
-  }
-  b.stage = 'think';
-}
-
-function afterThink() {
-  const b = state.build;
-  b.diff = makeDiff();
-  /* the defect roll happens here, once, and is hidden from the player */
-  b.defective = Math.random() >= diffQuality(b.diff);
-  if (state.autoAccept) afterReview();
-  else { b.stage = 'review'; histPending(b.entry, 'diff ready — waiting for review'); }
-}
-
-/* after review: run tests if you own any, otherwise straight to the gate */
-function afterReview() {
-  const b = state.build;
-  if (!hasTests()) return toDeployGate();
-  b.stage = 'test';
-  b.timer = b.total = testTime();
-  histPending(b.entry, 'running tests…');
-}
-
-function afterTest() {
-  const b = state.build;
-  const caught = b.defective && Math.random() < catchRate();
-  if (!caught) return toDeployGate();          // green, or a defect that slipped past
-
-  if (state.ci) {
-    b.stage = 'autofix';
-    b.timer = b.total = autofixTime();
-    histPending(b.entry, 'CI is repairing the build…');
-    return;
-  }
-  b.stage = 'red';
-  b.failing = rint(1, 6);
-  histPending(b.entry, b.failing + ' tests failing — waiting on you');
-}
-
-function toDeployGate() {
-  const b = state.build;
-  if (state.cd) return startDeploy();
-  b.stage = 'deploy';
-  histPending(b.entry, 'waiting for deploy');
-}
-
-function startDeploy() {
-  const b = state.build;
-  if (!b) return;
-  if (b.kind === 'feature' && b.stage !== 'deploy') return;
-  if (b.kind === 'repair'  && b.stage !== 'fixready') return;
-  b.stage = 'deploying';
-  b.timer = b.total = deployTime();
-  histPending(b.entry, b.kind === 'repair' ? 'deploying the fix…' : 'deploying…');
-}
-
-function completeBuild(b) {
-  state.build = null;
-  state.features++;
-
-  const room   = Math.max(0, userCap() - state.users);
-  const gained = Math.min(usersPerFeature(), room);
-  state.users += gained;
-  if (b.defective) state.bugs++;
-
-  const tail = gained > 0
-    ? '<span class="ok">deployed · +' + gained + ' users</span>'
-    : '<span class="warn">deployed · at capacity, no new users</span>';
-  /* only tell them about the bug if monitoring would have shown it anyway */
-  const flag = b.defective && state.monitoring ? ' <span class="bad">(defect shipped)</span>' : '';
-  histResolve(b.entry, esc(b.diff.name) + ' <span style="color:var(--dimmer)">·</span> ' + tail + flag);
-}
-
-function completeFixDeploy(b) {
-  const inc = state.incident;
-  state.build = null;
-  if (!inc) return;
-
-  inc.deploysMade++;
-  if (inc.deploysMade < inc.deploysNeeded) {
-    inc.code = 'ERR-' + rint(1000, 9999);
-    inc.msg  = pick(ERRORS);
-    inc.text = inc.msg + ' [' + inc.code + ']';
-    histResolve(b.entry, '<span class="bad">' + pick(NOT_HELD) + '</span>');
-    log('Fix deployed — <b>still down</b>. Attempt ' + inc.deploysMade + ' of ' +
-        inc.deploysNeeded + '.', 'incident');
-    flash('incident');
-    return;
-  }
-
-  state.incident = null;
-  state.bugs = Math.max(0, state.bugs - 1);
-  state.build = state.stashed || null;
-  state.stashed = null;
-  if (state.build) histPending(state.build.entry, 'resumed');
-
-  histResolve(b.entry, '<span class="ok">Deployed — ' + esc(inc.code) +
-                       ' resolved, service restored.</span>');
-  log('Incident ' + inc.code + ' resolved after ' + inc.deploysMade +
-      ' deploy' + (inc.deploysMade === 1 ? '' : 's') + '.', 'fix');
-}
-
-function finishBugfix(b) {
-  state.bugs = Math.max(0, state.bugs - 1);
-  state.build = null;
-  histResolve(b.entry, '<span class="ok">Fixed: ' + esc(pick(BUGS)) + '.</span>');
-}
-
-/* ---- player verbs ---- */
-function advance() {
-  const b = state.build;
-  if (!b) { if (state.incident) submitRepair(); else submitCommand(); return; }
-  if (b.stage === 'perm')     return resolvePermission(true);
-  if (b.stage === 'review')   return approveDiff();
-  if (b.stage === 'red')      return fixRedBuild();
-  if (b.stage === 'deploy')   return startDeploy();
-  if (b.stage === 'fixready') return startDeploy();
-}
-
-function approveDiff() {
-  const b = state.build;
-  if (!b || b.stage !== 'review') return;
-  afterReview();
-}
-function rejectDiff() {
-  const b = state.build;
-  if (!b || b.stage !== 'review') return;
-  histResolve(b.entry, '<span class="warn">Rejected the diff. Nothing shipped.</span>');
-  state.build = null;
-}
-function fixRedBuild() {
-  const b = state.build;
-  if (!b || b.stage !== 'red') return;
-  b.stage = 'autofix';
-  b.timer = b.total = autofixTime();
-  histPending(b.entry, 'fixing the failing tests…');
-}
-function shipAnyway() {
-  const b = state.build;
-  if (!b || b.stage !== 'red') return;
-  toDeployGate();                       // defective stays true
-}
-
-/* /add is the command that builds a feature, until Enter-to-build is owned */
-function submitCommand() {
-  const raw = $('prompt').value.trim();
-  if (state.build || state.incident) return;
-
-  if (!raw) {
-    if (state.quickAdd) { startBuild('/add'); $('prompt').value = ''; return; }
-    histResolve(histPrompt(''), '<span class="warn">Type <code>/add</code> to build a feature.</span>');
-    return;
-  }
-
-  const m = raw.match(/^\/add\b\s*(.*)$/i);
-  if (!m) {
-    histResolve(histPrompt(raw), '<span class="bad">Unknown command. ' +
-                'Use <code>/add</code>' + (state.quickAdd ? ', or just press Enter' : '') + '.</span>');
-    $('prompt').value = '';
-    return;
-  }
-
-  startBuild(m[1] ? '/add ' + m[1] : '/add');
-  $('prompt').value = '';
-}
-
-function submitRepair() {
-  const text = $('prompt').value.trim();
-  if (!state.incident || state.build || !text) return;
-  if (errorMatches(text, state.incident)) {
-    const entry = histPrompt(text);
-    state.build = { id: ++buildSeq, kind:'repair', stage:'work',
-                    timer: repairTime(), total: repairTime(), entry };
-  } else {
-    histResolve(histPrompt(text), '<span class="bad">Production is on fire. Paste the ' +
-                'error message above — exactly as written — to fix it.</span>');
-  }
-  $('prompt').value = '';
-}
-
-function errorMatches(input, inc) {
-  const norm = s => s.toLowerCase().replace(/\s+/g, ' ').trim();
-  const a = norm(input);
-  if (!a) return false;
-  if (a.includes(inc.code.toLowerCase())) return true;
-  return a.includes(norm(inc.msg));
-}
-
-function fixBug() {
-  if (state.build || state.incident || state.bugs <= 0) return;
-  const entry = histPrompt('/fix');
-  state.build = { id: ++buildSeq, kind:'bugfix', stage:'work',
-                  timer: autofixTime(), total: autofixTime(), entry };
-}
-
-function triggerIncident() {
-  if (state.incident) return;
-  state.incidents++;
-
-  if (state.build && state.build.kind === 'feature') {
-    state.stashed = state.build;
-    state.build = null;
-    histPending(state.stashed.entry, 'paused — production is down');
-  }
-
-  const stubborn = Math.random() < CONFIG.STUBBORN_CHANCE;
-  const lo = Math.max(1, Math.floor(CONFIG.STUBBORN_DEPLOYS_MIN));
-  const hi = Math.max(lo, Math.floor(CONFIG.STUBBORN_DEPLOYS_MAX));
-  const code = 'ERR-' + rint(1000, 9999);
-  const msg  = pick(ERRORS);
-  state.incident = {
-    msg, code, text: msg + ' [' + code + ']',
-    deploysNeeded: stubborn ? rint(lo, hi) : 1, deploysMade: 0,
-  };
-
-  const l = Math.min(CONFIG.INCIDENT_MIN_LOSS, CONFIG.INCIDENT_MAX_LOSS);
-  const h = Math.max(CONFIG.INCIDENT_MIN_LOSS, CONFIG.INCIDENT_MAX_LOSS);
-  const lost = Math.min(state.users, Math.ceil(state.users * (l + Math.random() * (h - l))));
-  state.users -= lost; state.usersLost += lost;
-
-  log('INCIDENT ' + code + ' — <span style="color:var(--bad)">−' + fmt(lost) +
-      ' users</span>, and bleeding until a fix is deployed.', 'incident');
-  flash('incident');
-
-  if (state.incidents === 1) {
-    log('Paste the error to write a fix — then <b>deploy it</b>. Nothing else moves until you do.', 'note');
-  }
-}
-
-function buy(n) {
-  if (!buyable(n)) return;
-  const c = costOf(n);
-  state.cash -= c;
-  n.count = (n.count || 0) + 1;
-  n.apply();
-  log('Unlocked <b>' + n.name + '</b> for ' + money(c) + '.', 'buy');
-  hideTip();
-  renderTree();
-}
-
-/* ==========================================================================
-   PIPELINE CLOCK
-   ========================================================================== */
-const TIMED_STAGES = ['think', 'test', 'autofix', 'work', 'deploying'];
-
-function advancePipeline(dt) {
-  let b = state.build;
-  if (!b) return;
-  if (state.incident && b.kind === 'feature') return;
-  if (!TIMED_STAGES.includes(b.stage)) return;
-
-  b.timer -= dt;
-
-  if (b.stage === 'think' && b.perm && !b.perm.done && b.timer <= b.total * 0.5) {
-    if (state.skipPerms) {
-      b.stage = 'perm';
-      resolvePermission(true);
-    } else if (state.allowlist && !b.perm.danger) {
-      b.perm.done = true;
-    } else {
-      b.stage = 'perm';
-      histPending(b.entry, 'waiting for permission');
-      return;
-    }
-    b = state.build;
-    if (!b || b.stage !== 'think') return;
-  }
-
-  if (b.timer > 0) return;
-
-  if (b.stage === 'deploying') {
-    if (b.kind === 'repair') return completeFixDeploy(b);
-    return completeBuild(b);
-  }
-  if (b.kind === 'bugfix')   return finishBugfix(b);
-  if (b.kind === 'repair')   {
-    if (state.cd) return startDeploy();
-    b.stage = 'fixready';
-    histPending(b.entry, 'fix written — waiting for deploy');
-    return;
-  }
-  if (b.stage === 'think')   return afterThink();
-  if (b.stage === 'test')    return afterTest();
-  if (b.stage === 'autofix') { b.defective = false; return toDeployGate(); }
-}
-
-/* ==========================================================================
-   GAME LOOP
-   ========================================================================== */
-function tick(dt) {
-  state.elapsed += dt;
-  state.cash += state.users * CONFIG.REVENUE_PER_USER * dt;
-
-  if (state.incident && state.users > 0) {
-    const before = state.users;
-    state.users = Math.max(0, state.users * (1 - bleedRate() * dt));
-    state.usersLost += before - state.users;
-  }
-
-  advancePipeline(dt);
-
-  /* Agents bypass the pipeline. They are counted, never logged per feature. */
-  if (state.agents > 0) {
-    state.agentTimer += dt * state.agents;
-    let guard = 0;
-    while (state.agentTimer >= agentInterval() && guard++ < 500) {
-      state.agentTimer -= agentInterval();
-      state.features++;
-      state.agentFeatures++;
-      const room = Math.max(0, userCap() - state.users);
-      state.users += Math.min(usersPerFeature(), room);
-      if (Math.random() >= quality()) { state.bugs++; state.agentBugs++; }
-    }
-  }
-
-  if (state.bugs > 0 && state.users > 0 && !state.incident) {
-    const p = 1 - Math.pow(1 - CONFIG.INCIDENT_CHANCE_PER_BUG, state.bugs * dt);
-    if (Math.random() < p) triggerIncident();
-  }
-}
-
-/* ==========================================================================
-   VIEWS
-   ========================================================================== */
-function setView(v) {
-  view = v;
-  $('view-game').style.display   = v === 'game'   ? '' : 'none';
-  $('view-skills').style.display = v === 'skills' ? '' : 'none';
-  $('tab-game').classList.toggle('on', v === 'game');
-  $('tab-skills').classList.toggle('on', v === 'skills');
-  hideTip();
-  if (v === 'game') $('prompt').focus();
-}
-
-/* ==========================================================================
-   RENDER — stage card
-   ========================================================================== */
-function phaseName() {
-  if (state.users < 100)   return 'Garage';
-  if (state.users < 1000)  return 'Traction';
-  if (state.users < 10000) return 'Scale';
-  return 'Enterprise';
-}
-
-let stageKey = '';
-function renderStage() {
-  const b = state.build;
-  const box = $('stage');
-
-  const key = !b ? 'none'
-    : [b.id, b.kind, b.stage,
-       b.perm ? b.perm.cmd + b.perm.danger + b.perm.done : '-',
-       b.diff ? b.diff.file + b.diff.add + b.diff.del + b.diff.risky : '-',
-       b.failing || 0].join('|');
-
-  if (key === stageKey) {
-    const bar = box.querySelector('.cbar');
-    if (bar && b && b.total) bar.style.width = (100 * (1 - Math.max(0, b.timer) / b.total)).toFixed(1) + '%';
-    return;
-  }
-  stageKey = key;
-  box.innerHTML = '';
-  if (!b) return;
-
-  const card = document.createElement('div');
-  const parts = [];
-  if (TIMED_STAGES.includes(b.stage)) parts.push('<div class="cbar"></div>');
-
-  if (b.kind === 'repair' && b.stage === 'work') {
-    card.className = 'card fail';
-    parts.push('<div class="chead">writing the fix</div>',
-               '<div class="cbody">Patching the failure…</div>');
-  } else if (b.kind === 'repair' && b.stage === 'fixready') {
-    card.className = 'card fail';
-    parts.push('<div class="chead">fix ready — not live yet</div>',
-               '<div class="cbody">The patch is written. Production is still down.</div>',
-               '<div class="crow"><button class="btn ok" data-act="deploy">' +
-                 'Deploy the fix<kbd>↵</kbd></button></div>',
-               '<div class="csub">Deploying takes ' + deployTime().toFixed(1) +
-                 's. You are still losing users.</div>');
-  } else if (b.kind === 'repair' && b.stage === 'deploying') {
-    card.className = 'card fail';
-    parts.push('<div class="chead">deploying the fix</div>',
-               '<div class="cbody">Rolling out to production…</div>');
-  } else if (b.kind === 'bugfix') {
-    card.className = 'card wait';
-    parts.push('<div class="chead">fixing a known bug</div>',
-               '<div class="cbody">Working through the backlog…</div>');
-  } else if (b.stage === 'think') {
-    card.className = 'card wait';
-    parts.push('<div class="chead">claude is working</div>',
-               '<div class="cbody">Writing the change…</div>');
-  } else if (b.stage === 'perm') {
-    card.className = 'card ask';
-    parts.push('<div class="chead">permission required</div>',
-               '<div class="cbody">Claude wants to run:</div>',
-               '<div class="cmd' + (b.perm.danger ? ' danger' : '') + '">' + esc(b.perm.cmd) + '</div>',
-               '<div class="crow">' +
-                 '<button class="btn pri" data-act="allow">Allow<kbd>y</kbd></button>' +
-                 '<button class="btn no" data-act="deny">Deny<kbd>n</kbd></button></div>',
-               '<div class="csub">Read it before you answer.</div>');
-  } else if (b.stage === 'review') {
-    card.className = 'card diff';
-    parts.push('<div class="chead">review the diff</div>',
-               '<div class="cbody">' + esc(b.diff.file) +
-                 ' <span style="color:var(--good)">+' + b.diff.add + '</span>' +
-                 ' <span style="color:var(--bad)">−' + b.diff.del + '</span></div>',
-               b.diff.risky ? '<div class="crisk">⚠ ' + esc(b.diff.reason) + '</div>'
-                            : '<div class="csub">Looks routine.</div>',
-               '<div class="crow">' +
-                 '<button class="btn pri" data-act="approve">Approve<kbd>↵</kbd></button>' +
-                 '<button class="btn no" data-act="reject">Reject<kbd>r</kbd></button></div>',
-               hasTests() ? '' : '<div class="csub">No tests. Nothing will check this.</div>');
-  } else if (b.stage === 'test') {
-    card.className = 'card wait';
-    parts.push('<div class="chead">running tests</div>',
-               '<div class="cbody">' + esc(b.diff.file) + '…</div>');
-  } else if (b.stage === 'red') {
-    card.className = 'card fail';
-    parts.push('<div class="chead">tests caught a defect</div>',
-               '<div class="cbody">' + b.failing + ' test' + (b.failing === 1 ? '' : 's') +
-                 ' failing on ' + esc(b.diff.file) + '.</div>',
-               '<div class="crow">' +
-                 '<button class="btn ok" data-act="fixred">Fix it<kbd>↵</kbd></button>' +
-                 '<button class="btn no" data-act="shipany">Ship anyway<kbd>s</kbd></button></div>',
-               '<div class="csub">Shipping it saves ' + autofixTime().toFixed(1) +
-                 's and buys you a bug.</div>');
-  } else if (b.stage === 'autofix') {
-    card.className = 'card wait';
-    parts.push('<div class="chead">repairing the build</div>',
-               '<div class="cbody">Patching the failing tests…</div>');
-  } else if (b.stage === 'deploy') {
-    card.className = 'card ready';
-    parts.push('<div class="chead">ready to deploy</div>',
-               '<div class="cbody">' + esc(b.diff.name) +
-                 (hasTests() ? ' — tests green.' : ' — untested.') + '</div>',
-               '<div class="crow"><button class="btn ok" data-act="deploy">' +
-                 'Deploy<kbd>↵</kbd></button></div>',
-               '<div class="csub">Takes ' + deployTime().toFixed(1) +
-                 's. Users arrive when it lands.</div>');
-  } else if (b.stage === 'deploying') {
-    card.className = 'card ready';
-    parts.push('<div class="chead">deploying</div>',
-               '<div class="cbody">' + esc(b.diff ? b.diff.name : 'change') + ' — rolling out…</div>');
-  }
-
-  card.innerHTML = parts.join('');
-  box.appendChild(card);
-
-  card.querySelectorAll('button[data-act]').forEach(btn => {
-    btn.onclick = () => {
-      const a = btn.dataset.act;
-      if (a === 'allow')   resolvePermission(true);
-      if (a === 'deny')    resolvePermission(false);
-      if (a === 'approve') approveDiff();
-      if (a === 'reject')  rejectDiff();
-      if (a === 'fixred')  fixRedBuild();
-      if (a === 'shipany') shipAnyway();
-      if (a === 'deploy')  startDeploy();
-      $('prompt').focus();
-    };
-  });
-}
-
-/* ==========================================================================
-   RENDER — skill tree
-   ========================================================================== */
-const tipEl = $('tip');
-let tipFor = null;
-
-function showTip(n, el) {
-  tipFor = n.id;
-  const c = costOf(n);
-  const lock = missing(n);
-  const badge = spent(n) ? 'owned'
-              : isMaxed(n) ? (owned(n) ? 'maxed · owned ×' + n.count : 'maxed out')
-              : n.repeat && n.count ? 'owned ×' + n.count + ' · repeatable'
-              : n.repeat ? 'repeatable' : '';
-
-  tipEl.innerHTML =
-    '<span class="tt">' + esc(n.name) + '</span>' +
-    (spent(n) || isMaxed(n) ? '' : '<span class="tc">' + money(c) +
-      (state.cash < c ? ' — you have ' + money(state.cash) : '') + '</span>') +
-    '<div class="td">' + esc(n.desc()) + '</div>' +
-    (n.warn && !spent(n) ? '<div class="tw">' + esc(n.warn) + '</div>' : '') +
-    (lock.length ? '<div class="tw">Needs ' + esc(lock.join(' + ')) + '</div>' : '') +
-    (badge ? '<div class="to">' + badge + '</div>' : '');
-  positionTip(el);
-}
-
-function showMoreTip(count, el) {
-  tipFor = 'more';
-  tipEl.innerHTML = '<span class="tt">' + count + ' more to come</span>' +
-    '<div class="td">Locked skills appear here as you buy the ones before them.</div>';
-  positionTip(el);
-}
-
-function positionTip(el) {
-  tipEl.classList.add('on');
-  const r = el.getBoundingClientRect();
-  const t = tipEl.getBoundingClientRect();
-  let left = r.left, top = r.bottom + 8;
-  if (left + t.width > window.innerWidth - 12) left = window.innerWidth - t.width - 12;
-  if (top + t.height > window.innerHeight - 12) top = r.top - t.height - 8;
-  tipEl.style.left = Math.max(12, left) + 'px';
-  tipEl.style.top  = Math.max(12, top) + 'px';
-}
-
-function hideTip() { tipFor = null; tipEl.classList.remove('on'); }
-
-function renderTree() {
-  const box = $('tree');
-  box.innerHTML = '';
-
-  for (const br of tree) {
-    const row = document.createElement('div');
-    row.className = 'brow';
-    row.innerHTML = '<div class="blabel">' + br.branch + '<span>' + br.note + '</span></div>';
-
-    const tiles = document.createElement('div');
-    tiles.className = 'btiles';
-
-    let hidden = 0;
-    for (const n of br.nodes) {
-      if (!visible(n)) { hidden++; continue; }
-
-      const isSpent = spent(n), isMax = isMaxed(n);
-      const inert = isSpent || isMax;
-      const el = document.createElement(inert ? 'div' : 'button');
-      el.className = 'tile' + (owned(n) ? ' own' : '') +
-        (!inert && state.cash < costOf(n) ? ' poor' : '') +
-        (n.warn && !owned(n) ? ' warnish' : '');
-      el.id = 'tile-' + n.id;
-
-      const right = isSpent ? 'owned'
-                  : isMax   ? (owned(n) ? 'maxed ×' + n.count : 'maxed')
-                  : money(costOf(n)) + (n.repeat && n.count ? ' · ×' + n.count : '');
-
-      el.innerHTML = '<span class="tname">' + esc(n.name) + '</span>' +
-                     '<span class="tcost">' + right + '</span>';
-
-      el.addEventListener('mouseenter', () => showTip(n, el));
-      el.addEventListener('mouseleave', hideTip);
-      el.addEventListener('focus',      () => showTip(n, el));
-      el.addEventListener('blur',       hideTip);
-      if (!inert) el.onclick = () => buy(n);
-
-      tiles.appendChild(el);
-    }
-
-    if (hidden > 0) {
-      const more = document.createElement('span');
-      more.className = 'tile more';
-      more.textContent = '+' + hidden;
-      more.addEventListener('mouseenter', () => showMoreTip(hidden, more));
-      more.addEventListener('mouseleave', hideTip);
-      tiles.appendChild(more);
-    }
-
-    row.appendChild(tiles);
-    box.appendChild(row);
-  }
-}
-
-/* ==========================================================================
-   RENDER — everything else
-   ========================================================================== */
-function render() {
-  const cap = userCap();
-  const b = state.build;
-
-  $('s-users').textContent    = fmt(state.users);
-  $('s-cap').textContent      = 'cap ' + fmt(cap) + (state.users >= cap ? ' — FULL' : '');
-  $('s-cash').textContent     = money(state.cash);
-  $('s-rate').textContent     = '$' + (state.users * CONFIG.REVENUE_PER_USER).toFixed(2) + '/s';
-  $('s-features').textContent = fmt(state.features);
-  $('s-agents').textContent   = state.agents === 0 ? 'no agents'
-                              : state.agents + (state.agents === 1 ? ' agent' : ' agents') +
-                                ' · ' + agentInterval().toFixed(1) + 's';
-  $('s-quality').textContent  = Math.round(quality() * 100) + '%';
-  $('s-detect').textContent   = hasTests()
-    ? Math.round(catchRate() * 100) + '% of defects caught'
-    : 'no tests — nothing is caught';
-  $('phase').textContent      = phaseName();
-  $('f-stats').textContent    = state.incidents + ' incident' + (state.incidents === 1 ? '' : 's') +
-                                ' · ' + fmt(state.usersLost) + ' users lost' +
-                                (state.disasters ? ' · ' + state.disasters + ' self-inflicted' : '');
-
-  $('tile-bugs').style.display = state.monitoring ? '' : 'none';
-  if (state.monitoring) $('s-bugs').textContent = fmt(state.bugs);
-
-  // agents: a running count, not a log line per feature
-  const strip = $('agentstrip');
-  if (state.agents > 0) {
-    strip.style.display = '';
-    strip.innerHTML =
-      '<span><b>' + state.agents + '</b> agent' + (state.agents === 1 ? '' : 's') +
-        ' · every ' + agentInterval().toFixed(1) + 's</span>' +
-      '<span><b>' + fmt(state.agentFeatures) + '</b> features shipped</span>' +
-      (state.monitoring
-        ? '<span class="bad">' + fmt(state.agentBugs) + ' defects introduced</span>'
-        : '<span style="color:var(--dimmer)">defects unknown</span>');
-  } else strip.style.display = 'none';
-
-  renderStage();
-
-  const p = $('prompt');
-  $('promptrow').classList.toggle('alarm', !!state.incident && !b);
-  $('promptrow').classList.toggle('idle', !!b);
-  p.placeholder = b              ? 'the pipeline is busy — use the card above'
-                : state.incident ? 'paste the error message above, then press Enter'
-                : state.quickAdd ? 'press Enter, or type /add'
-                                 : '/add';
-
-  let enterDoes = state.quickAdd ? 'build a feature' : 'run /add';
-  if (b && b.stage === 'perm')          enterDoes = 'allow';
-  else if (b && b.stage === 'review')   enterDoes = 'approve';
-  else if (b && b.stage === 'red')      enterDoes = 'fix the build';
-  else if (b && b.stage === 'deploy')   enterDoes = 'deploy';
-  else if (b && b.stage === 'fixready') enterDoes = 'deploy the fix';
-  else if (b)                           enterDoes = 'wait';
-  else if (state.incident)              enterDoes = 'submit the fix';
-
-  $('hintlabel').innerHTML = (state.incident && !b)
-    ? '<span style="color:var(--bad)">Production is down.</span> A fix must be written and deployed.'
-    : (b || state.quickAdd)
-      ? '<kbd>Enter</kbd> → ' + enterDoes
-      : 'Type <code>/add</code> and press <kbd>Enter</kbd> to build a feature.';
-
-  const manual = [!state.autoAccept && 'review', hasTests() && !state.ci && 'red-build',
-                  !state.cd && 'deploy'].filter(Boolean).length;
-  $('statuslabel').textContent = 'think ' + thinkTime().toFixed(1) + 's · deploy ' +
-    deployTime().toFixed(1) + 's · ' +
-    (manual ? manual + ' manual stage' + (manual === 1 ? '' : 's') : 'fully automated');
-
-  $('h-meta').textContent = state.features > 0 ? fmt(state.features) + ' shipped' : '';
-
-  const al = $('alert');
-  if (state.incident) {
-    al.style.display = '';
-    if ($('alert-err').textContent !== state.incident.text) {
-      $('alert-err').textContent = state.incident.text;
-    }
-    const inc = state.incident;
-    $('attempt').textContent = inc.deploysMade > 0
-      ? 'deploy ' + (inc.deploysMade + 1) + ' of ' + inc.deploysNeeded : '';
-    $('bleedlabel').textContent = 'losing ' + (bleedRate() * 100).toFixed(1) + '% of users per second';
-  } else al.style.display = 'none';
-
-  const fb = $('fixbtn');
-  fb.style.display = state.monitoring ? '' : 'none';
-  fb.disabled = !!b || !!state.incident || state.bugs <= 0;
-  fb.textContent = state.bugs > 0 ? 'Fix a bug (' + fmt(state.bugs) + ' open)' : 'No known bugs';
-
-  // how many skills are affordable right now — surfaced on the inactive tab
-  let affordable = 0;
-  for (const n of allNodes()) if (buyable(n)) affordable++;
-  const badge = $('tab-badge');
-  if (affordable > 0 && view !== 'skills') {
-    badge.style.display = ''; badge.textContent = affordable;
-  } else badge.style.display = 'none';
-
-  if (view === 'skills') {
-    for (const n of allNodes()) {
-      const el = $('tile-' + n.id);
-      if (!el) continue;
-      if (!(spent(n) || isMaxed(n))) {
-        el.classList.toggle('poor', state.cash < costOf(n));
-        const c = el.querySelector('.tcost');
-        if (c) c.textContent = money(costOf(n)) + (n.repeat && n.count ? ' · ×' + n.count : '');
-      }
-      if (tipFor === n.id) showTip(n, el);
-    }
-    $('tree-meta').textContent = allNodes().reduce((s, n) => s + (n.count || 0), 0) + ' unlocked';
-  }
-}
-
-/* ==========================================================================
-   INPUT + BOOT
-   ========================================================================== */
-const promptEl = $('prompt');
-
-$('tab-game').onclick   = () => setView('game');
-$('tab-skills').onclick = () => setView('skills');
-
-document.addEventListener('keydown', e => {
-  if (e.metaKey || e.ctrlKey || e.altKey) return;
-
-  const inPrompt = document.activeElement === promptEl;
-
-  /* 1 / 2 switch pages. Ignored mid-typing so they can still be typed into
-     the prompt once it has content. */
-  if ((e.key === '1' || e.key === '2') && !(inPrompt && promptEl.value.length)) {
-    e.preventDefault();
-    setView(e.key === '1' ? 'game' : 'skills');
-    return;
-  }
-
-  if (e.key === 'Escape' && inPrompt) { promptEl.blur(); return; }
-  if (view !== 'game') return;
-
-  const b = state.build;
-  const waiting = b && ['perm','review','red','deploy','fixready'].includes(b.stage);
-
-  if (e.key === 'Enter') { e.preventDefault(); advance(); return; }
-  if (!waiting) return;
-
-  const k = e.key.toLowerCase();
-  if (b.stage === 'perm'   && k === 'y') { e.preventDefault(); resolvePermission(true);  }
-  if (b.stage === 'perm'   && k === 'n') { e.preventDefault(); resolvePermission(false); }
-  if (b.stage === 'review' && k === 'r') { e.preventDefault(); rejectDiff(); }
-  if (b.stage === 'red'    && k === 's') { e.preventDefault(); shipAnyway(); }
-});
-
-window.addEventListener('scroll', hideTip, { passive: true });
-
-$('fixbtn').onclick = () => { fixBug(); promptEl.focus(); };
-
-$('copybtn').onclick = async () => {
-  if (!state.incident) return;
-  const text = state.incident.text;
-  const done = () => {
-    $('copybtn').textContent = 'Copied — now paste it';
-    setTimeout(() => { if ($('copybtn')) $('copybtn').textContent = 'Copy error'; }, 1600);
-  };
-  try { await navigator.clipboard.writeText(text); done(); }
-  catch (err) {
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
-    document.body.appendChild(ta); ta.select();
-    let ok = false;
-    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-    ta.remove();
-    if (ok) done();
-    else {
-      $('copybtn').textContent = 'Select the text and copy it';
-      setTimeout(() => { if ($('copybtn')) $('copybtn').textContent = 'Copy error'; }, 2200);
-    }
-  }
-  promptEl.focus();
-};
-
-const resetBtn = $('reset');
-let resetArmed = false, resetTimer = null;
-function disarmReset() {
-  resetArmed = false;
-  resetBtn.classList.remove('armed');
-  resetBtn.textContent = 'reset';
-  if (resetTimer) { clearTimeout(resetTimer); resetTimer = null; }
-}
-resetBtn.onclick = () => {
-  if (!resetArmed) {
-    resetArmed = true;
-    resetBtn.classList.add('armed');
-    resetBtn.textContent = 'click again to confirm';
-    resetTimer = setTimeout(disarmReset, 3000);
-    return;
-  }
-  disarmReset();
-  state = freshState();
-  tree = makeTree();
-  logEl.innerHTML = '';
-  histEl.innerHTML = '<div class="h-empty">No history yet. Type <b>/add</b> and press Enter.</div>';
-  lastKey = ''; stageKey = ''; hideTip();
-  renderTree(); render();
-  log('Fresh repo. Good luck.', 'note');
-  promptEl.focus();
-};
-
-let lastKey = '';
-function unlockWatch() {
-  let key = '';
-  for (const n of allNodes()) {
-    key += (n.count || 0) + (visible(n) ? 'v' : '') + (isMaxed(n) ? 'm' : '') + ',';
-  }
-  if (key !== lastKey) { lastKey = key; renderTree(); }
-}
-
-let last = performance.now();
-function frame(now) {
-  const dt = Math.min(0.25, (now - last) / 1000);
-  last = now;
-  tick(dt);
-  unlockWatch();
-  render();
-  requestAnimationFrame(frame);
-}
-
-/* A bad config.js is a hard stop — better a readable error than a NaN game. */
-if (!reportConfigProblems()) {
-  renderTree();
-  setView('game');
-  render();
-  log('You have an app. It has no users. Type <b>/add</b> to ship something.', 'note');
-  promptEl.focus();
-  requestAnimationFrame(frame);
-}
+  /* Classic script: if the module below never runs, say so with the fix. */
+  window.__booted = false;
+  setTimeout(function () {
+    if (!window.__booted) document.getElementById('bootfail').style.display = 'block';
+  }, 1200);
 </script>
+<script type="module" src="src/main.js"></script>
 </body>
 </html>
