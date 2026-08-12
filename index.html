@@ -283,8 +283,11 @@
   .tile:hover:not(.poor):not(.own) { border-color: var(--accent); background: #26262c; }
   .tile.poor { cursor: default; }
   .tile.poor .tcost { color: var(--dimmer); }
+  /* .own = nothing left to buy here. Repeatables use .stacked instead so they
+     keep reading as clickable however many you already own. */
   .tile.own { cursor: default; border-color: var(--accent); background: rgba(217,119,87,0.07); }
   .tile.own .tcost { color: var(--accent); }
+  .tile.stacked { border-left: 3px solid var(--accent); }
   .tile.warnish { border-color: rgba(229,72,77,0.5); }
   .tile.more {
     cursor: help; color: var(--dimmer); border-style: dashed;

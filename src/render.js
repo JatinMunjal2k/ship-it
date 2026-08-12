@@ -209,16 +209,20 @@ export function renderTree(onBuy) {
     for (const n of br.nodes) {
       if (!visible(n)) { hidden++; continue; }
 
-      const inert = spent(n) || isMaxed(n);
-      const el = document.createElement(inert ? 'div' : 'button');
-      el.className = 'tile' + (owned(n) ? ' own' : '') +
-        (!inert && state.cash < costOf(n) ? ' poor' : '') +
+      /* `done` means nothing more can be bought here. A repeatable you already
+         own is NOT done — it must keep looking clickable, or the affordable
+         count on the tab points at tiles that look finished. */
+      const done = spent(n) || isMaxed(n);
+      const el = document.createElement(done ? 'div' : 'button');
+      el.className = 'tile' + (done ? ' own' : '') +
+        (!done && owned(n) ? ' stacked' : '') +
+        (!done && state.cash < costOf(n) ? ' poor' : '') +
         (n.warn && !owned(n) ? ' warnish' : '');
       el.id = 'tile-' + n.id;
 
       const right = spent(n) ? 'owned'
                   : isMaxed(n) ? (owned(n) ? 'maxed ×' + n.count : 'maxed')
-                  : money(costOf(n)) + (n.repeat && n.count ? ' · ×' + n.count : '');
+                  : money(costOf(n)) + (n.repeat && n.count ? '  ·  ×' + n.count : '');
 
       el.innerHTML = '<span class="tname">' + esc(n.name) + '</span>' +
                      '<span class="tcost">' + right + '</span>';
@@ -227,7 +231,7 @@ export function renderTree(onBuy) {
       el.addEventListener('mouseleave', hideTip);
       el.addEventListener('focus',      () => showTip(n, el));
       el.addEventListener('blur',       hideTip);
-      if (!inert) el.onclick = () => onBuy(n);
+      if (!done) el.onclick = () => onBuy(n);
 
       tiles.appendChild(el);
     }
@@ -281,10 +285,6 @@ export function render(onAction) {
       '<span><b>' + state.agents + '</b> agent' + (state.agents === 1 ? '' : 's') +
         ' · every ' + agentInterval().toFixed(1) + 's</span>' +
       '<span><b>' + fmt(state.agentFeatures) + '</b> features shipped</span>' +
-      (state.monitoring
-        ? '<span class="bad">' + fmt(state.agentBugs) + ' defects introduced</span>' +
-          (state.ci ? '<span class="ok">' + fmt(state.agentCaught) + ' caught by CI</span>' : '')
-        : '<span style="color:var(--dimmer)">defects unknown</span>') +
       (state.remediation > 0 && state.monitoring
         ? '<span class="ok">' + fmt(state.autoFixed) + ' auto-remediated</span>' : '');
   } else strip.style.display = 'none';
@@ -355,7 +355,7 @@ export function render(onAction) {
       if (!(spent(n) || isMaxed(n))) {
         el.classList.toggle('poor', state.cash < costOf(n));
         const c = el.querySelector('.tcost');
-        if (c) c.textContent = money(costOf(n)) + (n.repeat && n.count ? ' · ×' + n.count : '');
+        if (c) c.textContent = money(costOf(n)) + (n.repeat && n.count ? '  ·  ×' + n.count : '');
       }
       if (tipFor === n.id) showTip(n, el);
     }
