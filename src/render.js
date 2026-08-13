@@ -7,7 +7,7 @@ import { CONFIG } from './config.js';
 import {
   state, quality, userCap, agentInterval, hasTests, catchRate, income,
   thinkTime, autofixTime, deployTime, repairTime, bleedRate, capacityUse,
-  phaseName, fmt, money, esc, $,
+  phaseName, fmt, money, moneyFine, esc, $,
 } from './state.js';
 import { TIMED_STAGES } from './pipeline.js';
 import { goalProgress } from './ending.js';
@@ -290,12 +290,8 @@ export function renderTree(onBuy) {
     }
   }
 
-  const hub = document.createElement('div');
-  hub.className = 'hub';
-  hub.style.left = PAD_X + 'px';
-  hub.style.top  = PAD_Y + 'px';
-  hub.textContent = 'your app';
-  nodesBox.appendChild(hub);
+  /* No decorative hub: the centre skill sits at the origin, so a marker there
+     just showed through from behind it, bought or not. */
 
   for (const n of allNodes()) {
     const pos = POSITIONS[n.id];
@@ -384,11 +380,17 @@ export function render(onAction) {
   $('s-cap').textContent = use >= 0.995 ? 'at capacity, ship nothing new'
                          : Math.round(use * 100) + '% of capacity';
 
-  $('s-cash').textContent     = money(state.cash);
-  $('s-rate').textContent     = money(income()) + '/s';
+  $('s-cash').textContent     = moneyFine(state.cash);
+  $('s-rate').textContent     = moneyFine(income()) + '/s';
   $('s-features').textContent = fmt(state.features);
-  $('s-goal').textContent     = 'goal ' + fmt(CONFIG.ENDING_USERS) + ' users, ' +
-                                Math.floor(goalProgress() * 100) + '%';
+  $('s-goal').textContent     = state.agentFeatures > 0
+    ? fmt(state.agentFeatures) + ' by agents'
+    : 'all by hand';
+
+  /* The goal belongs to the whole run, not to the features tile. */
+  const prog = goalProgress();
+  $('goalfill').style.width = (prog * 100).toFixed(2) + '%';
+  $('goaltext').textContent = fmt(state.users) + ' of ' + fmt(CONFIG.ENDING_USERS) + ' users';
 
   /* Code quality stays hidden until a skill reveals it. */
   $('tile-quality').style.display = state.seeQuality ? '' : 'none';

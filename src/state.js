@@ -134,6 +134,16 @@ export function money(n) {
   if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
   return '$' + Math.floor(n);
 }
+
+/* Cash and income need decimals at the bottom of the range. Early income is a
+   few users times a few cents, so flooring it reports a healthy trickle as a
+   flat $0/s and the whole economy looks broken. Skill costs keep money(). */
+export function moneyFine(n) {
+  if (n >= 1000) return money(n);
+  if (n >= 10)   return '$' + n.toFixed(0);
+  if (n >= 1)    return '$' + n.toFixed(1);
+  return '$' + n.toFixed(2);
+}
 /* "20% less time" reads better than "x0.8" for anyone who is not tuning it. */
 export const lessTime = mult => Math.round((1 - mult) * 100) + '% less time';
 export const morePct  = mult => '+' + Math.round((mult - 1) * 100) + '%';

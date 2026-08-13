@@ -86,10 +86,10 @@ export function makeTree() { return [
   /* ======================= QUALITY - defects and outages ================= */
   { branch: 'Quality', note: 'defects and outages', color: '#6fcf7f', nodes: [
     { id: 'q0', name: 'Linter', cost: 90, req: 'm1',
-      desc: () => 'Fewer defects written in the first place. Code quality +4 points.',
+      desc: () => 'Fewer defects written in the first place. Code quality +4%.',
       apply: () => { state.qualityBonus += 0.04; state.seeQuality = true; } },
     { id: 'q1', name: 'Type checking', cost: 300, req: 'q0',
-      desc: () => 'Code quality +6 points.',
+      desc: () => 'Code quality +6%.',
       apply: () => { state.qualityBonus += 0.06; } },
     { id: 'q2', name: 'Unit tests', cost: 800, req: 'q1',
       desc: () => 'Adds a test stage that catches ' + pct(CONFIG.CATCH_RATE_UNIT * 100) +
@@ -114,7 +114,7 @@ export function makeTree() { return [
       apply: () => { state.repairMult *= 0.70; }, maxed: atRepairFloor },
 
     { id: 'q7', name: 'Code review', cost: 11000, req: 'q4',
-      desc: () => 'Code quality +9 points. Agents ship 26% slower.',
+      desc: () => 'Code quality +9%. Agents ship 26% slower.',
       warn: 'Adds 0.6s to every build, under the floor.',
       apply: () => { state.qualityBonus += 0.09; state.buildFlat += 0.6;
                      state.agentIntervalMult *= 1.35; } },
@@ -141,7 +141,7 @@ export function makeTree() { return [
                   's without you. Worth it once your agents out-produce your tests.',
       apply: () => { state.remediation += 1; } },
     { id: 'q13', name: 'Fuzz testing', cost: 85000, scale: 1.55, repeat: true, req: 'q7',
-      desc: () => 'Code quality +2 points. Now ' + pct(quality() * 100) + '.',
+      desc: () => 'Code quality +2%. Now ' + pct(quality() * 100) + '.',
       apply: () => { state.qualityBonus += 0.02; },
       maxed: () => quality() >= 0.99 - 1e-9 },
   ]},

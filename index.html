@@ -54,13 +54,30 @@
   #configerr ul { margin: 8px 0 0; padding-left: 20px; color: var(--dim); }
 
   header {
-    display: flex; align-items: baseline; gap: 12px;
+    display: flex; align-items: center; gap: 14px;
     padding-bottom: 14px; border-bottom: 1px solid var(--border);
   }
   h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: -0.2px; }
   h1 span { color: var(--accent); }
+  .tagline { color: var(--dimmer); font-size: 11px; }
+  @media (max-width: 720px) { .tagline { display: none; } }
+
+  /* the run goal, which belongs to the whole game rather than one stat tile */
+  .goal { margin-left: auto; display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .goalbar {
+    width: 190px; height: 5px; border-radius: 3px;
+    background: #222228; overflow: hidden; flex-shrink: 0;
+  }
+  @media (max-width: 720px) { .goalbar { width: 90px; } }
+  .goalbar i {
+    display: block; height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--warn));
+    transition: width 0.25s ease-out;
+  }
+  #goaltext { font-size: 11px; color: var(--dim); white-space: nowrap; }
+
   .phase {
-    margin-left: auto; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
     color: var(--accent); border: 1px solid var(--accent); padding: 2px 8px; border-radius: 3px;
   }
 
@@ -276,15 +293,6 @@
   #treeedges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
   #treenodes { position: absolute; left: 0; top: 0; }
 
-  .hub {
-    position: absolute; transform: translate(-50%, -50%);
-    width: 74px; height: 74px; border-radius: 50%;
-    border: 1px dashed #34343c; display: flex; align-items: center;
-    justify-content: center; text-align: center;
-    font-size: 9.5px; letter-spacing: 1px; text-transform: uppercase;
-    color: var(--dimmer); pointer-events: none;
-  }
-
   .tile {
     position: absolute; transform: translate(-50%, -50%);
     width: 104px; height: 68px; box-sizing: border-box;
@@ -304,7 +312,9 @@
   .tile.ready:hover { background: #26262c; box-shadow: 0 0 16px -2px currentColor; }
   .tile.poor { cursor: default; opacity: 0.55; }
   .tile.poor .tcost { color: var(--dimmer); }
-  .tile.own { cursor: default; background: rgba(255,255,255,0.03); }
+  /* Opaque, not translucent: the connector lines run underneath the tiles and
+     showed straight through a semi-transparent fill. */
+  .tile.own { cursor: default; background: #212127; }
   .tile.own .tcost { opacity: 0.75; }
   .tile.stacked { border-width: 2px; }
   .tile.stacked .tcost { color: var(--good); }
@@ -408,7 +418,11 @@
 
   <header>
     <h1>ship<span>_</span>it</h1>
-    <span style="color:var(--dimmer);font-size:11px">an incremental game about software</span>
+    <span class="tagline">an incremental game about software</span>
+    <div class="goal">
+      <div class="goalbar"><i id="goalfill"></i></div>
+      <span id="goaltext">0 of 1.00M users</span>
+    </div>
     <span class="phase" id="phase">Garage</span>
   </header>
 
@@ -439,7 +453,7 @@
     <div class="stat">
       <div class="label">Features</div>
       <div class="value" id="s-features">0</div>
-      <div class="sub" id="s-goal">goal 1.00M users, 0%</div>
+      <div class="sub" id="s-goal">all by hand</div>
     </div>
     <div class="stat" id="tile-quality" style="display:none">
       <div class="label">Code Quality</div>
