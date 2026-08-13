@@ -8,7 +8,7 @@
 
 import { state, esc, $ } from './state.js';
 
-const EMPTY_HISTORY = 'No history yet. Type <b>/add</b> and press Enter.';
+const EMPTY_HISTORY = 'No history yet. Type <b>/ship</b> and press Enter.';
 
 export function histPrompt(text) {
   const el = $('history');

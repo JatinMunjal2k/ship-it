@@ -1,8 +1,9 @@
 /* ==========================================================================
-   The demo goal.
+   The demo goal: a million users.
 
-   Features shipped is the target because it only ever goes up — users churn,
-   so a user-count goal could be reached and then un-reached.
+   Users rather than features, because a million users is a number anyone
+   recognises as an ending, and growth is multiplicative so it is a few hundred
+   well-multiplied features rather than a grind.
 
    Lives in its own module so the rule is testable without driving the render
    loop, and so main.js stays wiring rather than game rules.
@@ -11,13 +12,13 @@
 import { CONFIG } from './config.js';
 import { state } from './state.js';
 
-export const goalReached = () => state.features >= CONFIG.ENDING_FEATURES;
+export const goalReached = () => state.users >= CONFIG.ENDING_USERS;
 
 export const goalProgress = () =>
-  Math.min(1, state.features / Math.max(1, CONFIG.ENDING_FEATURES));
+  Math.min(1, state.users / Math.max(1, CONFIG.ENDING_USERS));
 
-/* Returns true the single tick the goal is first crossed, so the caller can
-   show the ending once rather than every frame. */
+/* True on the single tick the goal is first crossed, so the caller shows the
+   ending once rather than every frame. */
 export function checkEnding() {
   if (state.ended) return false;
   if (!goalReached()) return false;

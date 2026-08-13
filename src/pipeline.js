@@ -1,16 +1,13 @@
 /* ==========================================================================
-   The build pipeline — the thing the player actually operates.
+   The build pipeline, the thing the player actually operates.
 
-     /add → think → [perm] → [review] → [test → [red] → [autofix]]
-                  → [deploy] → deploying → shipped
+     /ship -> think -> [perm] -> [review] -> [test -> [red] -> [autofix]]
+                    -> [deploy] -> deploying -> shipped
 
    Bracketed stages are chores the Workflow branch deletes. `test` only exists
    once Unit tests is owned; before that a defect goes straight to production
    and you never see it happen. `deploying` is always a timer, so Continuous
    delivery removes the click but never the wait.
-
-   To add a stage: add it to the machine in advancePipeline (timed) or give it
-   a button in render.js (waits on the player), and add a card for it.
    ========================================================================== */
 
 import { CONFIG } from './config.js';
@@ -18,7 +15,9 @@ import {
   state, quality, hasTests, catchRate, usersPerFeature, userCap, agentInterval,
   thinkTime, testTime, autofixTime, deployTime, repairTime, fmt, esc, $,
 } from './state.js';
-import { FEATURES, FILES, RISKS, SAFE_CMDS, DANGER_CMDS, BUGS, pick, rint } from './flavor.js';
+import {
+  drawFeature, drawFile, drawRisk, drawBug, drawSafeCmd, drawDanger, rint,
+} from './flavor.js';
 import { log, flash, histPrompt, histPending, histResolve } from './log.js';
 import { completeFixDeploy, errorMatches } from './incidents.js';
 
@@ -35,7 +34,8 @@ export function startBuild(text) {
   let perm = null;
   if (Math.random() < CONFIG.PERMISSION_CHANCE) {
     const danger = Math.random() < CONFIG.DANGEROUS_SHARE;
-    perm = { cmd: danger ? pick(DANGER_CMDS) : pick(SAFE_CMDS), danger, done: false };
+    const picked = danger ? drawDanger() : drawSafeCmd();
+    perm = { cmd: picked.cmd, rule: picked.rule, danger, done: false };
   }
 
   state.build = {
@@ -47,14 +47,14 @@ export function startBuild(text) {
 function makeDiff() {
   const risky = Math.random() < CONFIG.RISKY_DIFF_CHANCE;
   return {
-    file: pick(FILES), add: rint(8, 240), del: rint(0, 90),
-    risky, reason: risky ? pick(RISKS) : null, name: pick(FEATURES),
+    file: drawFile(), add: rint(8, 240), del: rint(0, 90),
+    risky, reason: risky ? drawRisk() : null, name: drawFeature(),
   };
 }
 
 const diffQuality = d => d && d.risky ? quality() * CONFIG.RISKY_QUALITY_MULT : quality();
 
-/* ---- stage transitions -------------------------------------------------- */
+/* ---- stage transitions --------------------------------------------------- */
 export function resolvePermission(allow) {
   const b = state.build;
   if (!b || b.stage !== 'perm') return;
@@ -65,10 +65,10 @@ export function resolvePermission(allow) {
     if (p.danger) {
       histResolve(b.entry, '<span class="ok">Denied <code>' + esc(p.cmd) +
                            '</code>. Good catch.</span>');
-      log('Denied <b>' + esc(p.cmd) + '</b> — disaster averted.', 'fix');
+      log('Denied <b>' + esc(p.cmd) + '</b>, disaster averted.', 'fix');
     } else {
       histResolve(b.entry, '<span class="warn">Denied <code>' + esc(p.cmd) +
-                           '</code>. Claude could not continue.</span>');
+                           '</code>. That one was safe, and Claude could not continue.</span>');
     }
     state.build = null;
     return;
@@ -79,8 +79,8 @@ export function resolvePermission(allow) {
     const lost = Math.floor(state.users * CONFIG.DANGEROUS_USER_LOSS);
     state.users -= lost;
     state.usersLost += lost;
-    log('You approved <b>' + esc(p.cmd) + '</b>. <span style="color:var(--warn)">−' +
-        fmt(lost) + ' users.</span> It ran instantly and completely.', 'oops');
+    log('You approved <b>' + esc(p.cmd) + '</b>. <span style="color:var(--warn)">' +
+        fmt(lost) + ' users gone.</span> It ran instantly and completely.', 'oops');
     flash('oops');
   }
   b.stage = 'think';
@@ -92,7 +92,7 @@ function afterThink() {
   /* the defect roll happens once, here, and is hidden from the player */
   b.defective = Math.random() >= diffQuality(b.diff);
   if (state.autoAccept) afterReview();
-  else { b.stage = 'review'; histPending(b.entry, 'diff ready — waiting for review'); }
+  else { b.stage = 'review'; histPending(b.entry, 'diff ready, waiting for review'); }
 }
 
 function afterReview() {
@@ -100,7 +100,7 @@ function afterReview() {
   if (!hasTests()) return toDeployGate();
   b.stage = 'test';
   b.timer = b.total = testTime();
-  histPending(b.entry, 'running tests…');
+  histPending(b.entry, 'running tests');
 }
 
 function afterTest() {
@@ -111,17 +111,16 @@ function afterTest() {
   if (state.ci) {
     b.stage = 'autofix';
     b.timer = b.total = autofixTime();
-    histPending(b.entry, 'CI is repairing the build…');
+    histPending(b.entry, 'CI is repairing the build');
     return;
   }
   b.stage = 'red';
   b.failing = rint(1, 6);
-  histPending(b.entry, b.failing + ' tests failing — waiting on you');
+  histPending(b.entry, b.failing + ' tests failing, waiting on you');
 }
 
-/* Move to the deploy gate. The stage is set FIRST because startDeploy() only
-   accepts a build already sitting at its gate — calling it from the previous
-   stage silently does nothing and the build hangs forever. */
+/* The stage is set BEFORE deploying because startDeploy only accepts a build
+   already sitting at its gate. */
 function toDeployGate() {
   const b = state.build;
   b.stage = 'deploy';
@@ -136,7 +135,7 @@ export function startDeploy() {
   if (b.kind === 'repair'  && b.stage !== 'fixready') return;
   b.stage = 'deploying';
   b.timer = b.total = deployTime();
-  histPending(b.entry, b.kind === 'repair' ? 'deploying the fix…' : 'deploying…');
+  histPending(b.entry, b.kind === 'repair' ? 'deploying the fix' : 'deploying');
 }
 
 function completeBuild(b) {
@@ -144,26 +143,26 @@ function completeBuild(b) {
   state.features++;
 
   const room   = Math.max(0, userCap() - state.users);
-  const gained = Math.min(usersPerFeature(), room);
+  const gained = Math.min(usersPerFeature(false), room);
   state.users += gained;
   if (b.defective) state.bugs++;
 
   const tail = gained > 0
-    ? '<span class="ok">deployed · +' + gained + ' users</span>'
-    : '<span class="warn">deployed · at capacity, no new users</span>';
-  /* only mention the defect if monitoring would have shown it anyway */
-  const flag = b.defective && state.monitoring ? ' <span class="bad">(defect shipped)</span>' : '';
-  histResolve(b.entry, esc(b.diff.name) + ' <span style="color:var(--dimmer)">·</span> ' +
+    ? '<span class="ok">deployed, ' + fmt(gained) + ' new users</span>'
+    : '<span class="warn">deployed, at capacity so nobody new</span>';
+  /* only mention the defect if the player could have seen it anyway */
+  const flag = b.defective && state.seeBugs ? ' <span class="bad">(defect shipped)</span>' : '';
+  histResolve(b.entry, esc(b.diff.name) + ' <span style="color:var(--dimmer)">|</span> ' +
               tail + flag);
 }
 
 function finishBugfix(b) {
   state.bugs = Math.max(0, state.bugs - 1);
   state.build = null;
-  histResolve(b.entry, '<span class="ok">Fixed: ' + esc(pick(BUGS)) + '.</span>');
+  histResolve(b.entry, '<span class="ok">Fixed: ' + esc(drawBug()) + '.</span>');
 }
 
-/* ---- player verbs ------------------------------------------------------- */
+/* ---- player verbs -------------------------------------------------------- */
 export function advance() {
   const b = state.build;
   if (!b) { if (state.incident) submitRepair(); else submitCommand(); return; }
@@ -192,7 +191,7 @@ export function fixRedBuild() {
   if (!b || b.stage !== 'red') return;
   b.stage = 'autofix';
   b.timer = b.total = autofixTime();
-  histPending(b.entry, 'fixing the failing tests…');
+  histPending(b.entry, 'fixing the failing tests');
 }
 
 export function shipAnyway() {
@@ -201,26 +200,26 @@ export function shipAnyway() {
   toDeployGate();                    // defective stays true
 }
 
-/* /add builds a feature, until Enter-to-build is owned */
+/* /ship builds a feature, until Enter to ship is owned */
 export function submitCommand() {
   const raw = $('prompt').value.trim();
   if (state.build || state.incident) return;
 
   if (!raw) {
-    if (state.quickAdd) { startBuild('/add'); $('prompt').value = ''; return; }
-    histResolve(histPrompt(''), '<span class="warn">Type <code>/add</code> to build a feature.</span>');
+    if (state.quickShip) { startBuild('/ship'); $('prompt').value = ''; return; }
+    histResolve(histPrompt(''), '<span class="warn">Type <code>/ship</code> to build a feature.</span>');
     return;
   }
 
-  const m = raw.match(/^\/add\b\s*(.*)$/i);
+  const m = raw.match(/^\/ship\b\s*(.*)$/i);
   if (!m) {
-    histResolve(histPrompt(raw), '<span class="bad">Unknown command. Use <code>/add</code>' +
-                (state.quickAdd ? ', or just press Enter' : '') + '.</span>');
+    histResolve(histPrompt(raw), '<span class="bad">Unknown command. Use <code>/ship</code>' +
+                (state.quickShip ? ', or just press Enter' : '') + '.</span>');
     $('prompt').value = '';
     return;
   }
 
-  startBuild(m[1] ? '/add ' + m[1] : '/add');
+  startBuild(m[1] ? '/ship ' + m[1] : '/ship');
   $('prompt').value = '';
 }
 
@@ -233,19 +232,19 @@ export function submitRepair() {
                     timer: repairTime(), total: repairTime(), entry };
   } else {
     histResolve(histPrompt(text), '<span class="bad">Production is on fire. Paste the ' +
-                'error message above — exactly as written — to fix it.</span>');
+                'error message above, exactly as written, to fix it.</span>');
   }
   $('prompt').value = '';
 }
 
 export function fixBug() {
-  if (state.build || state.incident || state.bugs <= 0) return;
+  if (!state.canFixBugs || state.build || state.incident || state.bugs <= 0) return;
   const entry = histPrompt('/fix');
   state.build = { id: ++buildSeq, kind: 'bugfix', stage: 'work',
                   timer: autofixTime(), total: autofixTime(), entry };
 }
 
-/* ---- the clock ---------------------------------------------------------- */
+/* ---- the clock ----------------------------------------------------------- */
 export function advancePipeline(dt) {
   let b = state.build;
   if (!b) return;
@@ -278,8 +277,8 @@ export function advancePipeline(dt) {
   }
   if (b.kind === 'bugfix') return finishBugfix(b);
   if (b.kind === 'repair') {                            // fix written, needs deploying
-    b.stage = 'fixready';                               // set the gate before deploying
-    histPending(b.entry, 'fix written — waiting for deploy');
+    b.stage = 'fixready';
+    histPending(b.entry, 'fix written, waiting for deploy');
     if (state.cd) startDeploy();
     return;
   }
@@ -288,10 +287,11 @@ export function advancePipeline(dt) {
   if (b.stage === 'autofix') { b.defective = false; return toDeployGate(); }
 }
 
-/* ---- agents ------------------------------------------------------------- */
-/* Agents bypass the pipeline entirely. Their defects are only screened once CI
-   is owned — without it, automation buries you, which is the whole point of
-   the Workflow/Testing investment. */
+/* ---- agents -------------------------------------------------------------- */
+/* Agents bypass the pipeline entirely. They start out roughly twenty times
+   slower than shipping by hand and their output is worth a fraction of yours,
+   so they are a trickle you invest in rather than a replacement for playing.
+   Their defects are only screened once CI is owned. */
 export function runAgents(dt) {
   if (state.agents <= 0) return;
   state.agentTimer += dt * state.agents;
@@ -304,7 +304,7 @@ export function runAgents(dt) {
     state.agentFeatures++;
 
     const room = Math.max(0, userCap() - state.users);
-    state.users += Math.min(usersPerFeature(), room);
+    state.users += Math.min(usersPerFeature(true), room);
 
     if (Math.random() >= quality()) {
       const screened = state.ci && hasTests() && Math.random() < catchRate();
@@ -314,7 +314,7 @@ export function runAgents(dt) {
   }
 }
 
-/* Auto-remediation: the only bug sink that scales with investment. */
+/* Auto remediation: the only bug sink that scales with investment. */
 export function runRemediation(dt) {
   if (state.remediation <= 0 || state.bugs <= 0) return;
   state.remediationTimer += dt * state.remediation;

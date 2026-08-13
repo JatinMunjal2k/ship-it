@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ship it — a game about software</title>
+<title>ship it, a game about software</title>
 <style>
   :root {
     --bg:        #0c0c0e;
@@ -39,7 +39,6 @@
 
   .wrap { max-width: 1160px; margin: 0 auto; padding: 20px; }
 
-  /* ---------- boot failure / config errors ---------- */
   #bootfail, #configerr {
     display: none; margin: 16px 0 0; padding: 12px 14px;
     border: 1px solid var(--bad); border-radius: 6px;
@@ -54,7 +53,6 @@
   }
   #configerr ul { margin: 8px 0 0; padding-left: 20px; color: var(--dim); }
 
-  /* ---------- header ---------- */
   header {
     display: flex; align-items: baseline; gap: 12px;
     padding-bottom: 14px; border-bottom: 1px solid var(--border);
@@ -66,7 +64,6 @@
     color: var(--accent); border: 1px solid var(--accent); padding: 2px 8px; border-radius: 3px;
   }
 
-  /* ---------- tabs ---------- */
   .tabs { display: flex; gap: 6px; margin: 14px 0 0; }
   .tab {
     background: var(--panel); color: var(--dim);
@@ -86,8 +83,10 @@
     font-size: 10px; background: var(--accent); color: #14100e;
     border-radius: 8px; padding: 0 5px; font-weight: 700;
   }
+  .tab .paused {
+    font-size: 9.5px; color: var(--warn); text-transform: uppercase; letter-spacing: 0.6px;
+  }
 
-  /* ---------- stats ---------- */
   .stats {
     display: flex; gap: 1px; background: var(--border);
     border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin: 12px 0 16px;
@@ -102,8 +101,9 @@
   .value.good { color: var(--good); }
   .value.bad  { color: var(--bad); }
   .value.warn { color: var(--warn); }
+  /* the "/ 250" half of the users readout, always quiet */
+  .capof { font-size: 12px; font-weight: 400; color: var(--dimmer); letter-spacing: 0; }
 
-  /* ---------- layout ---------- */
   .cols { display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
   @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
 
@@ -120,7 +120,6 @@
   }
   .panel h2 .meta { color: var(--dim); text-transform: none; letter-spacing: 0; }
 
-  /* ---------- history ---------- */
   #history { height: 196px; overflow-y: auto; padding: 10px 12px; font-size: 12px; }
   #history .h-you { color: var(--text); padding-top: 6px; }
   #history .h-you .c { color: var(--accent); font-weight: 700; margin-right: 6px; }
@@ -137,10 +136,8 @@
     display: flex; gap: 14px; flex-wrap: wrap;
   }
   #agentstrip b { color: var(--text); font-weight: 600; }
-  #agentstrip .bad { color: var(--bad); }
-  #agentstrip .ok  { color: var(--good); }
+  #agentstrip .ok { color: var(--good); }
 
-  /* ---------- pipeline stage card ---------- */
   #stage { margin: 12px 14px 0; }
   #stage:empty { margin: 0; }
   .card {
@@ -172,12 +169,12 @@
   .card .cbody { position: relative; font-size: 12px; color: var(--text); }
   .card .csub  { position: relative; font-size: 11px; color: var(--dim); margin-top: 3px; }
   .card .crisk { position: relative; font-size: 11px; color: var(--bad); margin-top: 5px; }
+  /* Safe and destructive commands look identical. Reading it is the mechanic. */
   .card .cmd {
     position: relative; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 4px; padding: 7px 9px; margin: 2px 0 0;
-    font-size: 12px; color: var(--text); word-break: break-all;
+    border-radius: 4px; padding: 8px 10px; margin: 2px 0 0;
+    font-size: 12.5px; color: var(--text); word-break: break-all;
   }
-  .card .cmd.danger { border-color: var(--bad); color: var(--bad); }
   .card .crow { position: relative; display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
 
   .btn {
@@ -197,8 +194,8 @@
   .btn.ok  { border-color: var(--good); color: var(--good); }
   .btn.ok:hover:not(:disabled)  { background: rgba(111,207,127,0.1); }
   .btn.no  { color: var(--dim); }
+  .btn.big { padding: 10px 18px; font-size: 13px; }
 
-  /* ---------- prompt ---------- */
   .promptbox { padding: 12px 14px 14px; }
   .promptrow {
     position: relative; overflow: hidden; display: flex; align-items: center; gap: 8px;
@@ -226,17 +223,26 @@
   #statuslabel { color: var(--dim); white-space: nowrap; }
   .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
-  /* ---------- incident alert ---------- */
   #alert {
     margin: 12px 14px 0; padding: 10px 12px;
     border: 1px solid var(--bad); border-radius: 5px; background: rgba(229, 72, 77, 0.07);
+  }
+  /* a bug that survived its fix looks different, and moves */
+  #alert.repro {
+    border-color: var(--warn); background: rgba(232,179,57,0.09);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(232,179,57,0.0); }
+    50%      { box-shadow: 0 0 0 4px rgba(232,179,57,0.13); }
   }
   #alert .ahead {
     color: var(--bad); font-weight: 700; font-size: 11px;
     text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;
     display: flex; justify-content: space-between; gap: 10px;
   }
-  #alert .ahead .att { color: var(--warn); }
+  #alert.repro .ahead { color: var(--warn); }
+  #alert .ahead .att { color: var(--warn); font-weight: 400; text-transform: none; }
   #alert-err {
     background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
     padding: 8px 10px; font-size: 11.5px; color: var(--text);
@@ -245,7 +251,6 @@
   #alert .arow { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
   #alert .bleed { color: var(--bad); font-size: 11px; }
 
-  /* ---------- event log ---------- */
   #log {
     height: 430px; overflow-y: auto; padding: 10px 12px; font-size: 12px;
     display: flex; flex-direction: column-reverse;
@@ -258,7 +263,7 @@
   #log .fix      { color: var(--good); }
   #log .note     { color: var(--warn); }
 
-  /* ---------- skill tree: a pannable graph ---------- */
+  /* ---------- skill map ---------- */
   #treewrap {
     position: relative; height: 600px; overflow: hidden;
     background:
@@ -271,7 +276,6 @@
   #treeedges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
   #treenodes { position: absolute; left: 0; top: 0; }
 
-  /* the origin marker: the app everything radiates from */
   .hub {
     position: absolute; transform: translate(-50%, -50%);
     width: 74px; height: 74px; border-radius: 50%;
@@ -281,7 +285,6 @@
     color: var(--dimmer); pointer-events: none;
   }
 
-  /* Near-square so the map reads as a board. Names wrap rather than truncate. */
   .tile {
     position: absolute; transform: translate(-50%, -50%);
     width: 104px; height: 68px; box-sizing: border-box;
@@ -297,22 +300,16 @@
     letter-spacing: -0.1px; word-break: break-word;
   }
   .tile .tcost { display: block; font-size: 9.5px; color: var(--good); }
-
-  /* affordable: branch-coloured and lit */
   .tile.ready { box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 4px 14px rgba(0,0,0,0.4); }
   .tile.ready:hover { background: #26262c; box-shadow: 0 0 16px -2px currentColor; }
-  /* unaffordable: present but quiet */
   .tile.poor { cursor: default; opacity: 0.55; }
   .tile.poor .tcost { color: var(--dimmer); }
-  /* nothing left to buy here */
   .tile.own { cursor: default; background: rgba(255,255,255,0.03); }
   .tile.own .tcost { opacity: 0.75; }
-  /* a repeatable you own but can still buy — must stay obviously clickable */
   .tile.stacked { border-width: 2px; }
   .tile.stacked .tcost { color: var(--good); }
-  .tile.warnish .tname::after { content: ' ⚠'; color: var(--bad); font-size: 9px; }
+  .tile.warnish .tname::after { content: ' !'; color: var(--bad); }
 
-  /* an owned skill leads somewhere you cannot see yet */
   .stub {
     position: absolute; transform: translate(-50%, -50%);
     width: 34px; height: 34px; border-radius: 50%;
@@ -322,15 +319,6 @@
     cursor: help; padding: 0;
   }
   .stub:hover { border-color: var(--dim); color: var(--dim); }
-
-  #treelegend {
-    position: absolute; left: 10px; bottom: 10px;
-    display: flex; flex-wrap: wrap; gap: 4px 12px; max-width: 60%;
-    font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.8px;
-    pointer-events: none;
-  }
-  #treelegend span { display: flex; align-items: center; gap: 5px; color: var(--dimmer); }
-  #treelegend i { width: 8px; height: 8px; border-radius: 2px; display: block; }
 
   #treectl { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px; }
   .zoombtn { width: 28px; padding: 4px 0; text-align: center; }
@@ -350,33 +338,58 @@
   #tip .to { color: var(--accent); margin-top: 5px; font-size: 10.5px;
              text-transform: uppercase; letter-spacing: 0.5px; }
 
-  /* ---------- ending ---------- */
-  #ending {
+  /* ---------- overlays ---------- */
+  .overlay {
     display: none; position: fixed; inset: 0; z-index: 400;
-    background: rgba(8,8,10,0.88); align-items: center; justify-content: center;
-    padding: 24px;
+    background: rgba(8,8,10,0.9); align-items: center; justify-content: center; padding: 24px;
   }
-  #ending .ecard {
+  .ocard {
     background: var(--panel); border: 1px solid var(--accent); border-radius: 8px;
-    padding: 26px 28px; max-width: 460px; width: 100%;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    padding: 26px 28px; max-width: 480px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6); max-height: 86vh; overflow-y: auto;
   }
-  #ending .etag {
+  .ocard .etag {
     font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
     color: var(--accent); margin-bottom: 10px;
   }
-  #ending h3 { margin: 0 0 8px; font-size: 20px; letter-spacing: -0.4px; }
-  #ending .elede { color: var(--dim); font-size: 12px; margin-bottom: 18px; line-height: 1.6; }
-  #ending .erow {
+  .ocard h3 { margin: 0 0 8px; font-size: 20px; letter-spacing: -0.4px; }
+  .ocard .elede { color: var(--dim); font-size: 12px; margin-bottom: 18px; line-height: 1.6; }
+  .erow {
     display: flex; justify-content: space-between; gap: 12px;
     padding: 5px 0; border-bottom: 1px solid #202026; font-size: 12px; color: var(--dim);
   }
-  #ending .erow:last-of-type { border-bottom: none; }
-  #ending .erow b { color: var(--text); }
-  #ending .eacts { display: flex; gap: 8px; margin-top: 20px; }
-  #ending .ethanks {
-    margin-top: 16px; font-size: 11px; color: var(--dimmer); line-height: 1.6;
+  .erow:last-of-type { border-bottom: none; }
+  .erow b { color: var(--text); }
+  .eacts { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+  .ethanks { margin-top: 16px; font-size: 11px; color: var(--dimmer); line-height: 1.6; }
+
+  /* menu */
+  #menu .ocard { max-width: 430px; text-align: left; }
+  #menu h3 { font-size: 26px; }
+  #menu h3 span { color: var(--accent); }
+  #menu-save {
+    font-size: 11.5px; color: var(--dim); margin: 0 0 16px;
+    padding: 9px 11px; background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 5px;
   }
+  #menu-save b { color: var(--text); }
+  #menu .eacts { flex-direction: column; }
+  #menu .eacts .btn { width: 100%; text-align: center; }
+
+  /* safety reference */
+  #rules .ocard { max-width: 560px; border-color: var(--warn); }
+  .rgroup { margin-bottom: 18px; }
+  .rgroup h4 {
+    margin: 0 0 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .rgroup.ok  h4 { color: var(--good); }
+  .rgroup.bad h4 { color: var(--bad); }
+  .rrow {
+    padding: 7px 0; border-bottom: 1px solid #202026; font-size: 11.5px; line-height: 1.55;
+  }
+  .rrow:last-child { border-bottom: none; }
+  .rrow b { display: block; color: var(--text); font-size: 12px; }
+  .rrow span { color: var(--dim); }
 
   footer {
     margin-top: 16px; display: flex; justify-content: space-between;
@@ -399,13 +412,11 @@
     <span class="phase" id="phase">Garage</span>
   </header>
 
-  <!-- shown only if the ES modules never boot, which on file:// they cannot -->
   <div id="bootfail">
     <b>The game could not start.</b> Browsers block ES modules on <code>file://</code>, so opening
-    this file directly will not work. Serve the folder instead — from this directory, run:
+    this file directly will not work. Serve the folder instead, from this directory run:
     <pre>python3 -m http.server 8000</pre>
-    then open <code>http://localhost:8000</code>. The published version at
-    <code>jatinmunjal2k.github.io/ship-it</code> needs none of this.
+    then open <code>http://localhost:8000</code>. The published version needs none of this.
   </div>
   <div id="configerr"></div>
 
@@ -418,37 +429,36 @@
     <div class="stat">
       <div class="label">Users</div>
       <div class="value" id="s-users">0</div>
-      <div class="sub" id="s-cap">cap 250</div>
+      <div class="sub" id="s-cap">0% of capacity</div>
     </div>
     <div class="stat">
       <div class="label">Cash</div>
       <div class="value good" id="s-cash">$0</div>
-      <div class="sub" id="s-rate">$0.00/s</div>
+      <div class="sub" id="s-rate">$0/s</div>
     </div>
     <div class="stat">
       <div class="label">Features</div>
       <div class="value" id="s-features">0</div>
-      <div class="sub" id="s-goal">goal 2.5K · 0%</div>
+      <div class="sub" id="s-goal">goal 1.00M users, 0%</div>
     </div>
-    <div class="stat">
+    <div class="stat" id="tile-quality" style="display:none">
       <div class="label">Code Quality</div>
       <div class="value warn" id="s-quality">50%</div>
-      <div class="sub" id="s-detect">no tests — nothing is caught</div>
+      <div class="sub" id="s-detect">no tests, nothing is caught</div>
     </div>
     <div class="stat" id="tile-bugs" style="display:none">
       <div class="label">Open Bugs</div>
       <div class="value bad" id="s-bugs">0</div>
-      <div class="sub">visible</div>
+      <div class="sub">in production</div>
     </div>
   </div>
 
-  <!-- ========================= PAGE 1: GAME ========================= -->
   <div id="view-game">
     <div class="cols">
       <div class="panel">
         <h2>claude code <span class="meta" id="h-meta"></span></h2>
 
-        <div id="history"><div class="h-empty">No history yet. Type <b>/add</b> and press Enter.</div></div>
+        <div id="history"><div class="h-empty">No history yet. Type <b>/ship</b> and press Enter.</div></div>
 
         <div id="agentstrip" style="display:none"></div>
 
@@ -456,7 +466,7 @@
 
         <div id="alert" style="display:none">
           <div class="ahead">
-            <span>Production incident — paste the error into the prompt</span>
+            <span id="alert-head">Production incident, paste the error into the prompt</span>
             <span class="att" id="attempt"></span>
           </div>
           <div id="alert-err"></div>
@@ -469,10 +479,10 @@
         <div class="promptbox">
           <div class="promptrow" id="promptrow">
             <span class="chev">&gt;</span>
-            <input id="prompt" autocomplete="off" spellcheck="false" placeholder="/add">
+            <input id="prompt" autocomplete="off" spellcheck="false" placeholder="/ship">
           </div>
           <div class="hint">
-            <span id="hintlabel">Type <code>/add</code> and press <kbd>Enter</kbd> to build a feature.</span>
+            <span id="hintlabel">Type <code>/ship</code> and press <kbd>Enter</kbd> to build a feature.</span>
             <span id="statuslabel"></span>
           </div>
           <div class="actions">
@@ -488,21 +498,19 @@
     </div>
   </div>
 
-  <!-- ====================== PAGE 2: SKILL TREE ====================== -->
   <div id="view-skills" style="display:none">
     <div class="panel">
       <h2>
         <span>skill tree <span class="meta" id="tree-meta"></span></span>
-        <span class="meta" id="tree-hint">drag to pan · scroll to zoom</span>
+        <span class="meta">the clock is paused while you are here</span>
       </h2>
       <div id="treewrap">
         <div id="treecanvas">
           <svg id="treeedges"></svg>
           <div id="treenodes"></div>
         </div>
-        <div id="treelegend"></div>
         <div id="treectl">
-          <button class="btn zoombtn" id="zoomout" title="Zoom out">−</button>
+          <button class="btn zoombtn" id="zoomout" title="Zoom out">-</button>
           <button class="btn zoombtn" id="zoomin" title="Zoom in">+</button>
           <button class="btn" id="recenter">Recenter</button>
         </div>
@@ -511,7 +519,7 @@
   </div>
 
   <footer>
-    <span id="f-stats">0 incidents · 0 users lost</span>
+    <span id="f-stats">0 incidents, 0 users lost</span>
     <button id="reset">reset</button>
   </footer>
 
@@ -519,31 +527,67 @@
 
 <div id="tip"></div>
 
-<div id="ending">
-  <div class="ecard">
+<!-- main menu -->
+<div id="menu" class="overlay">
+  <div class="ocard">
+    <div class="etag">a game about software</div>
+    <h3>ship<span>_</span>it</h3>
+    <div class="elede">
+      You have an app. Ship features, watch users arrive, and try to notice the
+      defects before they notice you. Get to a million users.
+    </div>
+    <div id="menu-save" style="display:none"></div>
+    <div class="eacts">
+      <button class="btn pri big" id="menu-continue">Continue</button>
+      <button class="btn big" id="menu-new">New game</button>
+      <button class="btn no" id="menu-rules">Which commands are safe?</button>
+    </div>
+    <div class="ethanks">
+      New game erases any run in progress. There is no offline progress, time
+      stops when you close the tab.
+    </div>
+  </div>
+</div>
+
+<!-- safety reference -->
+<div id="rules" class="overlay">
+  <div class="ocard">
+    <div class="etag">reference</div>
+    <h3>Which commands are safe?</h3>
+    <div class="elede">
+      Claude will ask permission to run things. Most are harmless. A few destroy
+      data permanently. You do not need to know the commands, only these rules.
+    </div>
+    <div id="rules-body"></div>
+    <div class="eacts">
+      <button class="btn pri" id="rules-close">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ending -->
+<div id="ending" class="overlay">
+  <div class="ocard">
     <div class="etag">demo end</div>
-    <h3>Thanks for playing.</h3>
+    <h3>A million users.</h3>
     <div class="elede">
       You automated every chore you started with. Shipping is one keypress again,
-      guarded by so much process that you can barely move — and all of it is
-      load-bearing. That is the joke, and it is also just the job.
+      guarded by so much process that you can barely move, and all of it is
+      load bearing. That is the joke, and it is also just the job.
     </div>
     <div id="end-stats"></div>
     <div class="eacts">
       <button class="btn pri" id="end-continue">Keep playing</button>
-      <button class="btn" id="end-restart">Start over</button>
+      <button class="btn" id="end-restart">Back to menu</button>
     </div>
     <div class="ethanks">
-      This is a prototype. If you have thoughts — where you got bored, what you
-      expected to happen and didn't — those are the useful ones.
+      This is a prototype. If you have thoughts, where you got bored, what you
+      expected to happen and did not, those are the useful ones.
     </div>
   </div>
 </div>
 
 <script>
-  /* Classic script: if the module below never runs, say so with the fix.
-     Generous delay so a slow network is not mistaken for a failure — main.js
-     hides this again the moment it boots. */
   window.__booted = false;
   setTimeout(function () {
     if (!window.__booted) document.getElementById('bootfail').style.display = 'block';
