@@ -75,6 +75,9 @@ export const POSITIONS = {
   s6:  { x: -2, y:  2 },
   s9:  { x: -2, y:  3 },
   s7:  { x: -1, y:  3 },
+  s11: { x: -1, y:  4 },   // rarity arm, below the growth arm
+  s12: { x: -2, y:  4 },
+  s13: { x:  0, y:  4 },
 
   /* Agents: down and to the right */
   a0:  { x:  1, y:  1 },

@@ -23,7 +23,8 @@
 import { CONFIG } from './config.js';
 import {
   state, quality, agentInterval, agentShare, thinkTime, deployTime, repairTime,
-  userCap, revenuePerUser, fmt, atThinkFloor, atRepairFloor,
+  userCap, revenuePerUser, rareChance, legendaryChance, fmt,
+  atThinkFloor, atRepairFloor,
 } from './state.js';
 
 const pct = n => Math.round(n) + '%';
@@ -180,6 +181,26 @@ export function makeTree() { return [
     { id: 's7', name: 'Better empty states', cost: 4000, req: 's2',
       desc: () => 'Every feature you ship lands 8 more users than it would have.',
       apply: () => { state.usersBonus += 8; } },
+
+    /* Rarity: the same work, occasionally landing far harder. */
+    { id: 's11', name: 'Product taste', cost: 9000, req: 's7',
+      desc: () => 'You start picking the right things to build. Rare features, ' +
+                  'worth ' + CONFIG.RARE_MULT + 'x the users, rise from ' +
+                  pct(rareChance() * 100) + ' to ' + pct((rareChance() + 0.06) * 100) + '.',
+      apply: () => { state.rareBonus += 0.06; } },
+    { id: 's12', name: 'Hit factory', cost: 32000, scale: 1.6, repeat: true, req: 's11',
+      desc: () => 'Rare features another 5% more likely. Now ' +
+                  pct(rareChance() * 100) + ', capped at ' +
+                  pct(CONFIG.RARE_CHANCE_MAX * 100) + '.',
+      apply: () => { state.rareBonus += 0.05; },
+      maxed: () => rareChance() >= CONFIG.RARE_CHANCE_MAX - 1e-9 },
+    { id: 's13', name: 'Moonshot bets', cost: 70000, scale: 1.7, repeat: true, req: 's11',
+      desc: () => 'Legendary features, worth ' + CONFIG.LEGENDARY_MULT +
+                  'x the users, another 2% more likely. Now ' +
+                  pct(legendaryChance() * 100) + ', capped at ' +
+                  pct(CONFIG.LEGENDARY_CHANCE_MAX * 100) + '.',
+      apply: () => { state.legendaryBonus += 0.02; },
+      maxed: () => legendaryChance() >= CONFIG.LEGENDARY_CHANCE_MAX - 1e-9 },
 
     { id: 's8', name: 'CDN', cost: 30000, req: 's5',
       desc: () => 'Capacity +200%. Serve it from near the user.',

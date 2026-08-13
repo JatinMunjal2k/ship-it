@@ -24,6 +24,8 @@ export function freshState() {
     userGainMult: 1,          // x users per shipped feature
     viralRate: 0,             // share of your existing users a feature brings back
     usersBonus: 0,            // + to both ends of the users-per-feature roll
+    rareBonus: 0,             // + to the rare chance, capped in config
+    legendaryBonus: 0,        // + to the legendary chance, capped in config
     buildMult: 1, buildFlat: 0,
     repairMult: 1,
     agentIntervalMult: 1,     // x agent seconds per feature
@@ -116,6 +118,25 @@ export function phaseName() {
   if (state.users < 250000)  return 'Scale';
   return 'Enterprise';
 }
+
+/* ---- rarity --------------------------------------------------------------
+   Both chances are raised by skills and clamped to the caps in config, so a
+   repeatable can never push them past the ceiling. */
+export const rareChance      = () => Math.min(CONFIG.RARE_CHANCE_MAX,
+                                              CONFIG.RARE_CHANCE + state.rareBonus);
+export const legendaryChance = () => Math.min(CONFIG.LEGENDARY_CHANCE_MAX,
+                                              CONFIG.LEGENDARY_CHANCE + state.legendaryBonus);
+
+/* Legendary is checked first, so raising it never eats into rare. Returns null
+   for an ordinary feature. */
+export function rollRarity() {
+  if (Math.random() < legendaryChance()) return 'legendary';
+  if (Math.random() < rareChance())      return 'rare';
+  return null;
+}
+
+export const rarityMult = r => r === 'legendary' ? CONFIG.LEGENDARY_MULT
+                             : r === 'rare'      ? CONFIG.RARE_MULT : 1;
 
 /* Fraction of capacity in use, for the colour of the users readout. */
 export const capacityUse = () => state.users / userCap();

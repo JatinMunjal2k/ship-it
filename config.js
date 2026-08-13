@@ -26,6 +26,18 @@ export default {
 
     // Capacity before any Scale skills. Percentage skills multiply this.
     BASE_USER_CAP:          250,
+
+    // Now and then a feature lands far harder than it had any right to.
+    // Rolled only for features you ship by hand, never for agent output:
+    // bulk automation does not produce breakout hits, and letting it would
+    // undo the agent balance. Chances are raised by the Scale branch, up to
+    // the caps here.
+    RARE_CHANCE:              0.10,
+    RARE_CHANCE_MAX:          0.30,
+    RARE_MULT:                5,
+    LEGENDARY_CHANCE:         0.01,
+    LEGENDARY_CHANCE_MAX:     0.10,
+    LEGENDARY_MULT:          20,
   },
 
   /* ------------------------------------------------------------------------

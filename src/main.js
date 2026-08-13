@@ -125,7 +125,26 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); hideRules(); }
     return;
   }
+  if (introOpen()) {
+    if (e.key === 'Enter') { e.preventDefault(); advanceIntro(); }
+    if (e.key === 'Escape') { e.preventDefault(); endIntro(); }
+    return;
+  }
+  /* Escape on the menu resumes, Escape in play opens it. */
+  if ($('menu').style.display === 'flex') {
+    if (e.key === 'Escape' && $('menu-continue').style.display !== 'none') {
+      e.preventDefault(); $('menu-continue').click();
+    }
+    return;
+  }
   if (!running) return;
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    saveGame();
+    showMenu(true);
+    return;
+  }
 
   const inPrompt = document.activeElement === promptEl;
 
@@ -135,7 +154,6 @@ document.addEventListener('keydown', e => {
     return;
   }
 
-  if (e.key === 'Escape' && inPrompt) { promptEl.blur(); return; }
   if (state.ended || view !== 'game') return;
 
   const b = state.build;
@@ -258,7 +276,7 @@ $('end-continue').onclick = () => {
   log('Sandbox mode. The goal is behind you, keep going as long as you like.', 'note');
   promptEl.focus();
 };
-$('end-restart').onclick = () => { hideEnding(); newRun(); showMenu(); };
+$('end-restart').onclick = () => { hideEnding(); newRun(); showMenu(false); };
 
 /* ---- reset --------------------------------------------------------------- */
 const resetBtn = $('reset');
@@ -298,11 +316,61 @@ function newRun() {
 }
 
 /* ==========================================================================
+   Intro. Three beats, shown once when a new run starts. It exists because a
+   new player otherwise lands on a prompt reading "/ship" with no idea why.
+   ========================================================================== */
+const INTRO = [
+  { title: 'You have an app.',
+    body: 'Nobody uses it yet. Type /ship and press Enter to build a feature. ' +
+          'Every feature you ship brings users, and users pay you.' },
+  { title: 'Spend what they pay you.',
+    body: 'Cash buys skills on the skill tree, on tab 2. Skills make you ship ' +
+          'faster, reach more people, and eventually do the boring parts for you.' },
+  { title: 'Everything you ship can break.',
+    body: 'Some changes carry a defect. Enough defects and production goes down, ' +
+          'and users leave while it is broken. When that happens, copy the error ' +
+          'into the prompt and deploy the fix.' },
+];
+let introStep = 0;
+
+function showIntro() {
+  introStep = 0;
+  paintIntro();
+  $('intro').style.display = 'flex';
+}
+function paintIntro() {
+  const b = INTRO[introStep];
+  $('intro-step').textContent  = (introStep + 1) + ' of ' + INTRO.length;
+  $('intro-title').textContent = b.title;
+  $('intro-body').textContent  = b.body;
+  $('intro-next').textContent  = introStep === INTRO.length - 1 ? 'Start' : 'Next';
+  $('intro-skip').style.display = introStep === INTRO.length - 1 ? 'none' : '';
+}
+function advanceIntro() {
+  if (introStep < INTRO.length - 1) { introStep++; paintIntro(); return; }
+  endIntro();
+}
+function endIntro() {
+  $('intro').style.display = 'none';
+  running = true;
+  last = performance.now();
+  promptEl.focus();
+}
+const introOpen = () => $('intro').style.display === 'flex';
+
+$('intro-next').onclick = advanceIntro;
+$('intro-skip').onclick = endIntro;
+
+/* ==========================================================================
    Main menu
    ========================================================================== */
-function showMenu() {
+/* fromGame: the run is already in memory and merely paused, so do NOT reload
+   it from disk, that would throw away everything since the last autosave. */
+function showMenu(fromGame) {
   running = false;
-  const save = hasSave() ? loadGame() : { ok: false };
+  const save = fromGame
+    ? { ok: true, savedAt: Date.now() }
+    : (hasSave() ? loadGame() : { ok: false });
   const cont = $('menu-continue');
 
   if (save.ok) {
@@ -310,7 +378,7 @@ function showMenu() {
     $('menu-save').style.display = '';
     $('menu-save').innerHTML =
       '<b>' + fmt(state.users) + '</b> users, <b>' + fmt(state.features) + '</b> features shipped' +
-      (save.savedAt ? ', last played ' + describeAge(save.savedAt) : '');
+      (fromGame ? ', paused' : save.savedAt ? ', last played ' + describeAge(save.savedAt) : '');
   } else {
     cont.style.display = 'none';
     $('menu-save').style.display = 'none';
@@ -338,8 +406,10 @@ $('menu-continue').onclick = () => {
 
 $('menu-new').onclick = () => {
   newRun();
-  startPlaying();
+  $('menu').style.display = 'none';
+  setView('game');
   log('You have an app. It has no users. Type <b>/ship</b> to build something.', 'note');
+  showIntro();                      // running stays false until the intro ends
 };
 
 $('menu-rules').onclick = () => renderRules();
@@ -358,6 +428,6 @@ document.addEventListener('visibilitychange', () => {
    ========================================================================== */
 if (!reportConfigProblems()) {
   if (!storageOK) log('This browser blocks local storage, your run will not be saved.', 'note');
-  showMenu();
+  showMenu(false);
   requestAnimationFrame(frame);
 }

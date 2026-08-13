@@ -13,7 +13,8 @@
 import { CONFIG } from './config.js';
 import {
   state, quality, hasTests, catchRate, usersPerFeature, userCap, agentInterval,
-  thinkTime, testTime, autofixTime, deployTime, repairTime, fmt, esc, $,
+  thinkTime, testTime, autofixTime, deployTime, repairTime, rollRarity, rarityMult,
+  fmt, esc, $,
 } from './state.js';
 import {
   drawFeature, drawFile, drawRisk, drawBug, drawSafeCmd, drawDanger, rint,
@@ -49,6 +50,8 @@ function makeDiff() {
   const d = {
     file: drawFile(), add: rint(8, 240), del: rint(0, 90),
     risky, reason: null, name: drawFeature(),
+    /* Rolled here so the card can show it before you commit to deploying. */
+    rarity: rollRarity(),
   };
   if (risky) {
     const r = drawRisk();
@@ -148,20 +151,29 @@ export function startDeploy() {
 
 function completeBuild(b) {
   state.build = null;
+  /* Unreachable in normal play, since deploying is only entered after the diff
+     is made, but a missing diff should not take the whole loop down. */
+  if (!b.diff) return;
   state.features++;
 
   const room   = Math.max(0, userCap() - state.users);
-  const gained = Math.min(usersPerFeature(false), room);
+  const mult   = rarityMult(b.diff.rarity);
+  const gained = Math.min(Math.round(usersPerFeature(false) * mult), room);
   state.users += gained;
   if (b.defective) state.bugs++;
+
+  const badge = b.diff.rarity === 'legendary'
+    ? '<span class="legendary">LEGENDARY</span> '
+    : b.diff.rarity === 'rare' ? '<span class="rare">RARE</span> ' : '';
+  if (b.diff.rarity) flash(b.diff.rarity === 'legendary' ? 'legendary' : 'rare');
 
   const tail = gained > 0
     ? '<span class="ok">deployed, ' + fmt(gained) + ' new users</span>'
     : '<span class="warn">deployed, at capacity so nobody new</span>';
   /* only mention the defect if the player could have seen it anyway */
   const flag = b.defective && state.seeBugs ? ' <span class="bad">(defect shipped)</span>' : '';
-  histResolve(b.entry, esc(b.diff.name) + ' <span style="color:var(--dimmer)">|</span> ' +
-              tail + flag);
+  histResolve(b.entry, badge + esc(b.diff.name) +
+              ' <span style="color:var(--dimmer)">|</span> ' + tail + flag);
 }
 
 function finishBugfix(b) {

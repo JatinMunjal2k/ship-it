@@ -36,6 +36,11 @@ export function setView(v) {
 /* ==========================================================================
    Stage card
    ========================================================================== */
+const rarityBanner = d => !d || !d.rarity ? ''
+  : d.rarity === 'legendary'
+    ? '<div class="crare legendary">Legendary feature, ' + CONFIG.LEGENDARY_MULT + 'x users</div>'
+    : '<div class="crare rare">Rare feature, ' + CONFIG.RARE_MULT + 'x users</div>';
+
 let stageKey = '';
 export function resetStageKey() { stageKey = ''; }
 
@@ -46,7 +51,7 @@ export function renderStage(onAction) {
   const key = !b ? 'none'
     : [b.id, b.kind, b.stage,
        b.perm ? b.perm.cmd + b.perm.danger + b.perm.done : '-',
-       b.diff ? b.diff.file + b.diff.add + b.diff.del + b.diff.risky : '-',
+       b.diff ? b.diff.file + b.diff.add + b.diff.del + b.diff.risky + b.diff.rarity : '-',
        b.failing || 0].join('|');
 
   if (key === stageKey) {
@@ -109,6 +114,7 @@ export function renderStage(onAction) {
                  ' <span style="color:var(--bad)">-' + b.diff.del + '</span></div>',
                b.diff.risky ? '<div class="crisk">Risky: ' + esc(b.diff.reason) + '</div>'
                             : '<div class="csub">Looks routine.</div>',
+               rarityBanner(b.diff),
                '<div class="crow">' +
                  '<button class="btn pri" data-act="approve">Approve<kbd>Enter</kbd></button>' +
                  '<button class="btn no" data-act="reject">Reject<kbd>r</kbd></button></div>',
@@ -136,6 +142,7 @@ export function renderStage(onAction) {
     parts.push('<div class="chead">ready to deploy</div>',
                '<div class="cbody">' + esc(b.diff.name) +
                  (hasTests() ? ', tests green.' : ', untested.') + '</div>',
+               rarityBanner(b.diff),
                '<div class="crow"><button class="btn ok" data-act="deploy">' +
                  'Deploy<kbd>Enter</kbd></button></div>',
                '<div class="csub">Takes ' + deployTime().toFixed(1) +
