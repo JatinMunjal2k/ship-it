@@ -172,17 +172,16 @@ export function makeTree() { return [
       desc: () => 'Capacity +150%. Reads go somewhere else.',
       apply: () => { state.capMult *= 2.5; } },
 
-    { id: 's6', name: 'Search engine optimisation', cost: 3200, req: 's2',
+    { id: 's6', name: 'SEO', cost: 3200, req: 's2',
       desc: () => 'Rank for things people actually search. Features bring back a ' +
                   'further 3.5% of your base. Now ' + pct(state.viralRate * 100 + 3.5) +
                   ' per feature.',
       apply: () => { state.viralRate += 0.035; } },
     { id: 's7', name: 'Better empty states', cost: 4000, req: 's2',
-      desc: () => 'The worst feature you ship still lands 8 more users. ' +
-                  'Raises the floor, not the ceiling.',
-      apply: () => { state.minUsersBonus += 8; } },
+      desc: () => 'Every feature you ship lands 8 more users than it would have.',
+      apply: () => { state.usersBonus += 8; } },
 
-    { id: 's8', name: 'Content delivery network', cost: 30000, req: 's5',
+    { id: 's8', name: 'CDN', cost: 30000, req: 's5',
       desc: () => 'Capacity +200%. Serve it from near the user.',
       apply: () => { state.capMult *= 3.0; } },
     { id: 's9', name: 'Word of mouth', cost: 11000, scale: 1.5, repeat: true, req: 's6',
@@ -190,7 +189,7 @@ export function makeTree() { return [
                   pct(state.viralRate * 100) + ', which is the number that ' +
                   'decides whether you outrun churn.',
       apply: () => { state.viralRate += 0.015; } },
-    { id: 's10', name: 'Horizontal sharding', cost: 65000, scale: 1.8, repeat: true, req: 's8',
+    { id: 's10', name: 'Sharding', cost: 65000, scale: 1.8, repeat: true, req: 's8',
       desc: () => 'Capacity +150%. Now ' + fmt(userCap()) + ' users.',
       apply: () => { state.capMult *= 2.5; } },
   ]},

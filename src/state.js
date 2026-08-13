@@ -23,7 +23,7 @@ export function freshState() {
     valueMult: 1,             // x revenue per user
     userGainMult: 1,          // x users per shipped feature
     viralRate: 0,             // share of your existing users a feature brings back
-    minUsersBonus: 0,         // + to the low end of the users-per-feature roll
+    usersBonus: 0,            // + to both ends of the users-per-feature roll
     buildMult: 1, buildFlat: 0,
     repairMult: 1,
     agentIntervalMult: 1,     // x agent seconds per feature
@@ -100,8 +100,8 @@ export const atRepairFloor = () => CONFIG.REPAIR_TIME_START * state.repairMult <
  * Agent output is worth a fraction of yours, on both parts.
  */
 export function usersPerFeature(byAgent) {
-  const lo = Math.floor(CONFIG.USERS_PER_FEATURE_MIN) + state.minUsersBonus;
-  const hi = Math.max(lo, Math.floor(CONFIG.USERS_PER_FEATURE_MAX) + state.minUsersBonus);
+  const lo = Math.floor(CONFIG.USERS_PER_FEATURE_MIN) + state.usersBonus;
+  const hi = Math.max(lo, Math.floor(CONFIG.USERS_PER_FEATURE_MAX) + state.usersBonus);
   const roll = lo + Math.floor(Math.random() * (hi - lo + 1));
 
   const flat  = roll * state.userGainMult;
