@@ -31,6 +31,8 @@ export function makeBag(items) {
   };
 }
 
+export const rint = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+
 /* ---- what a shipped feature turns out to be ------------------------------ */
 export const FEATURES = [
   "Added dark mode",
@@ -122,21 +124,25 @@ export const FILES = [
 ];
 
 /* ---- why a diff is flagged risky ----------------------------------------- */
+/* A reason may reshape the diff it is attached to, so the numbers on the card
+   never contradict the sentence under them. Add `shape` to any reason whose
+   text implies a size. */
 export const RISKS = [
-  "touches 14 files across 3 services",
-  "no test coverage on the changed paths",
-  "modifies the payments module",
-  "rewrites the auth middleware",
-  "bundles an unrelated dependency bump",
-  "deletes 200 lines with no explanation",
-  "changes a migration already applied in prod",
-  "adds a third way to do the same thing",
-  "the description is just 'fix'",
-  "written entirely between 2am and 4am",
-  "touches the file everyone is afraid of",
-  "removes a check somebody added deliberately",
-  "renames a public API without a deprecation",
-  "adds a sleep() to fix a race condition",
+  { text: "no test coverage on the changed paths" },
+  { text: "modifies the payments module" },
+  { text: "rewrites the auth middleware" },
+  { text: "changes a migration already applied in prod" },
+  { text: "adds a third way to do the same thing" },
+  { text: "the description is just 'fix'" },
+  { text: "written entirely between 2am and 4am" },
+  { text: "touches the file everyone is afraid of" },
+  { text: "removes a check somebody added deliberately" },
+  { text: "renames a public API without a deprecation" },
+  { text: "adds a sleep() to fix a race condition" },
+  { text: "deletes 200 lines with no explanation",
+    shape: d => { d.del = Math.max(d.del, 200 + rint(0, 140)); } },
+  { text: "bundles an unrelated dependency bump",
+    shape: d => { d.add = Math.max(d.add, 400 + rint(0, 900)); } },
 ];
 
 /* ---- bugs, as they appear in a backlog ----------------------------------- */
@@ -311,4 +317,3 @@ export const drawNotHeld = makeBag(NOT_HELD);
 export const drawSafeCmd = makeBag(SAFE_CMDS);
 export const drawDanger  = makeBag(DANGER_CMDS);
 
-export const rint = (a, b) => a + Math.floor(Math.random() * (b - a + 1));

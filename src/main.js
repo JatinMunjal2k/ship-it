@@ -25,8 +25,7 @@ window.__booted = true;
 const bootfail = $('bootfail');
 if (bootfail) bootfail.style.display = 'none';
 
-/* `running` is false on the menu and while the ending is up. The clock also
-   stops on the skill tree, so reading the map never costs you users. */
+/* `running` is false on the menu and while the ending is up. */
 let running = false;
 
 function reportConfigProblems() {
@@ -71,7 +70,7 @@ function onStageAction(act) {
    the menu, or reading the skill tree all pause the run.
    ========================================================================== */
 function tick(dt) {
-  if (!running || state.ended || view === 'skills') return;
+  if (!running || state.ended) return;
 
   state.elapsed += dt;
   state.cash += state.users * CONFIG.REVENUE_PER_USER * state.valueMult * dt;

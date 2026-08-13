@@ -46,10 +46,18 @@ export function startBuild(text) {
 
 function makeDiff() {
   const risky = Math.random() < CONFIG.RISKY_DIFF_CHANCE;
-  return {
+  const d = {
     file: drawFile(), add: rint(8, 240), del: rint(0, 90),
-    risky, reason: risky ? drawRisk() : null, name: drawFeature(),
+    risky, reason: null, name: drawFeature(),
   };
+  if (risky) {
+    const r = drawRisk();
+    d.reason = r.text;
+    /* keep the numbers honest: a reason that says 200 lines were deleted must
+       be attached to a diff that actually deletes at least that many */
+    if (r.shape) r.shape(d);
+  }
+  return d;
 }
 
 const diffQuality = d => d && d.risky ? quality() * CONFIG.RISKY_QUALITY_MULT : quality();
